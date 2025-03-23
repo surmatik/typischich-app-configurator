@@ -11,12 +11,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 export default function ConfiguratorStepPage() {
   const { product, step } = useParams() as { product: string; step: string }
   const router = useRouter()
-  const config = getProductConfigBySlug(product)
+  const config = getProductConfigBySlug(product)!
 
   if (!config) {
     return <p className="p-8">❌ Produkt nicht gefunden.</p>
   }
-  
+
   const currentIndex = config.flow.indexOf(step)
   const [prevIndex, setPrevIndex] = useState(currentIndex)
   const [direction, setDirection] = useState(0)
