@@ -80,7 +80,7 @@ export default function ConfiguratorStepPage() {
     setSelectedColor(storeColor || '')
     setSelectedDruckfarbe(storeDruckfarbe || '')
     setSelectedHobbys(storeHobbys || [])
-    setSelectedLandschaft(storeLandschaft || '')
+    setSelectedLandschaft(storeLandschaft[0] || '')
     setSelectedNameType(storeNameType || '')
     setEnteredName(storeCustomName || '')
   }, [storeSize, storeColor, storeDruckfarbe, storeHobbys, storeLandschaft, storeNameType, storeCustomName])
