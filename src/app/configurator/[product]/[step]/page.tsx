@@ -67,7 +67,7 @@ export default function ConfiguratorStepPage() {
     if (prevStep === 'color') setColor(selectedColor)
     if (prevStep === 'druckfarbe') setDruckfarbe(selectedDruckfarbe)
     if (prevStep === 'hobbys') setHobbys(selectedHobbys)
-    if (prevStep === 'landschaft') setLandschaft(selectedLandschaft)
+    if (prevStep === 'landschaft') setLandschaft([selectedLandschaft])
     if (prevStep === 'text') {
       setNameType(selectedNameType as any)
       if (selectedNameType === 'Name') setCustomName(enteredName)
