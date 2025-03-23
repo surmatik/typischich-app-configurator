@@ -45,7 +45,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set) => ({
   hobbys: [],
   setHobbys: (hobbys) => set({ hobbys }),
 
-  landschaft: '',
+  landschaft: [],
   setLandschaft: (landschaft) => set({ landschaft }),
 
   nameType: null,
