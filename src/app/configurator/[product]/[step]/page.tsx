@@ -11,11 +11,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 export default function ConfiguratorStepPage() {
   const { product, step } = useParams() as { product: string; step: string }
   const router = useRouter()
-  const config = getProductConfigBySlug(product)!
+  const config = getProductConfigBySlug(product)
 
-  if (!config) {
-    return <p className="p-8">❌ Produkt nicht gefunden.</p>
-  }
+    if (!config || !Array.isArray(config.colors)) {
+    return <p className="p-8">❌ Produkt nicht gefunden oder keine Farben verfügbar.</p>
+    }
 
   const currentIndex = config.flow.indexOf(step)
   const [prevIndex, setPrevIndex] = useState(currentIndex)
@@ -147,7 +147,7 @@ export default function ConfiguratorStepPage() {
       Farbe: storeColor || '',
       Druckfarbe: storeDruckfarbe || '',
       Hobbys: storeHobbys?.join(', ') || '',
-      Landschaft: storeLandschaft || '',
+      Landschaft: storeLandschaft[0] || '',
       Text: storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || ''),
       _KonfigID: `${Date.now()}-${Math.floor(Math.random() * 100000)}`
     }
