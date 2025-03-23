@@ -5,6 +5,7 @@ export interface ProductConfig {
     flow: string[]
     genderOptions?: string[]
     sizes?: string[]
+    colors?: string[]
   }
   
 export const productConfigs: ProductConfig[] = [
