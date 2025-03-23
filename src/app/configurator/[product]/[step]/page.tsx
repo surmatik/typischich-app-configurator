@@ -50,7 +50,7 @@ export default function ConfiguratorStepPage() {
   const [showInfo, setShowInfo] = useState(false)
   const [druckfarben, setDruckfarben] = useState<string[]>([])
   const [hobbyList, setHobbyList] = useState<{ name: string; thumbnail: string }[]>([])
-  const [landschaften, setLandschaften] = useState<{ name: string; url: string }[]>([])
+  const [landschaften, setLandschaften] = useState<{ id: number; name: string; url: string }[]>([])
   const [search, setSearch] = useState('')
 
   const prevStepRef = useRef(step)
