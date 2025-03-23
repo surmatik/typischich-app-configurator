@@ -419,7 +419,7 @@ export default function ConfiguratorStepPage() {
         <button
         disabled={!selectedLandschaft}
         onClick={() => {
-            setLandschaft(selectedLandschaft)
+            setLandschaft([selectedLandschaft])
             if (next) {
                 setDirection(1)
                 router.push(`/configurator/${product}/${next}`)
