@@ -21,7 +21,7 @@ export default function StepNavigator({ steps, current, productSlug, setDirectio
             <button
               onClick={() => {
                 if (setDirection) setDirection(index > currentIndex ? 1 : -1)
-                router.push(`/configurator/${productSlug}/${step}`)
+                router.push(`/${productSlug}/${step}`)
               }}
               className={`min-w-8 min-h-8 w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition
                 ${index <= currentIndex ? 'bg-black text-white' : 'bg-gray-300 text-gray-600'}`}

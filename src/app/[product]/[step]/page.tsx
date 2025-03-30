@@ -21,6 +21,8 @@ export default function ConfiguratorStepPage() {
   const [prevIndex, setPrevIndex] = useState(currentIndex)
   const [direction, setDirection] = useState(0)
 
+  const [hasMounted, setHasMounted] = useState(false)
+
   const setGender = useConfiguratorStore((s) => s.setGender)
   const setSize = useConfiguratorStore((s) => s.setSize)
   const setColor = useConfiguratorStore((s) => s.setColor)
@@ -62,6 +64,10 @@ export default function ConfiguratorStepPage() {
   }, [step])
 
   useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  useEffect(() => {
     const prevStep = prevStepRef.current
     if (prevStep === 'size') setSize(selectedSize)
     if (prevStep === 'color') setColor(selectedColor)
@@ -97,17 +103,36 @@ export default function ConfiguratorStepPage() {
   }, [step])
 
   useEffect(() => {
-    if (step === 'hobbys') {
-      fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-hobbys?populate=*&pagination[pageSize]=1000')
-        .then((res) => res.json())
-        .then((data) => {
-          const hobbys = data.data.map((item: any) => ({
-            name: item.Hobby,
-            thumbnail: item.Motive?.formats?.thumbnail?.url || item.Motive?.url,
-          }))
-          setHobbyList(hobbys)
-        })
+    if (step !== 'hobbys') return
+  
+    const fetchAllHobbys = async () => {
+      let allHobbys: { name: string; thumbnail: string }[] = []
+      let page = 1
+      let finished = false
+  
+      while (!finished) {
+        const res = await fetch(
+          `https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-hobbys?populate=*&pagination[page]=${page}&pagination[pageSize]=100`
+        )
+        const data = await res.json()
+        const currentPageHobbys = data.data.map((item: any) => ({
+          name: item.Hobby,
+          thumbnail: item.Motive?.formats?.thumbnail?.url || item.Motive?.url,
+        }))
+  
+        allHobbys = [...allHobbys, ...currentPageHobbys]
+  
+        if (data.data.length < 100) {
+          finished = true
+        } else {
+          page++
+        }
+      }
+  
+      setHobbyList(allHobbys)
     }
+  
+    fetchAllHobbys()
   }, [step])
 
   useEffect(() => {
@@ -191,7 +216,7 @@ export default function ConfiguratorStepPage() {
                   setGender(g as any)
                   if (next) {
                     setDirection(1)
-                    router.push(`/configurator/${product}/${next}`)
+                    router.push(`/${product}/${next}`)
                   }
                 }}
                 className="w-full py-3 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-300 text-[#262626]"
@@ -241,7 +266,7 @@ export default function ConfiguratorStepPage() {
               setSize(selectedSize)
               if (next) {
                 setDirection(1)
-                router.push(`/configurator/${product}/${next}`)
+                router.push(`/${product}/${next}`)
               }
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -254,7 +279,17 @@ export default function ConfiguratorStepPage() {
       {/* Step: Color */}
       {step === 'color' && config.colors && (
         <>
-          <h1 className="text-2xl font-bold mb-6 text-[#262626]">T-Shirt Farbe wählen</h1>
+          <h1 className="text-2xl font-bold mb-6 text-[#262626]">
+            {product.includes('tshirt')
+              ? 'T-Shirt Farbe wählen'
+              : product.includes('hoodie')
+              ? 'Hoodie Farbe wählen'
+              : product.includes('beanie')
+              ? 'Beanie Farbe wählen'
+              : product.includes('filz-bag')
+              ? 'Filz-Bag Farbe wählen'
+              : 'Farbe wählen'}
+          </h1>
 
           <select
             value={selectedColor}
@@ -275,7 +310,7 @@ export default function ConfiguratorStepPage() {
               setColor(selectedColor)
               if (next) {
                 setDirection(1)
-                router.push(`/configurator/${product}/${next}`)
+                router.push(`/${product}/${next}`)
               }
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -309,7 +344,7 @@ export default function ConfiguratorStepPage() {
               setDruckfarbe(selectedDruckfarbe)
               if (next) {
                 setDirection(1)
-                router.push(`/configurator/${product}/${next}`)
+                router.push(`/${product}/${next}`)
               }
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -319,7 +354,7 @@ export default function ConfiguratorStepPage() {
         </>
       )}
 
-    {step === 'hobbys' && typeof window !== 'undefined' && (
+    {step === 'hobbys' && hasMounted && typeof window !== 'undefined' && (
 
     <>
         <h1 className="text-2xl font-bold mb-6 text-[#262626]">Wähle bis zu 3 Hobbys</h1>
@@ -374,7 +409,7 @@ export default function ConfiguratorStepPage() {
             setHobbys(selectedHobbys)
             if (next) {
                 setDirection(1)
-                router.push(`/configurator/${product}/${next}`)
+                router.push(`/${product}/${next}`)
               }
         }}
         className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -422,7 +457,7 @@ export default function ConfiguratorStepPage() {
             setLandschaft([selectedLandschaft])
             if (next) {
                 setDirection(1)
-                router.push(`/configurator/${product}/${next}`)
+                router.push(`/${product}/${next}`)
               }
         }}
         className="w-full bg-black text-white py-3 mt-6 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -466,7 +501,7 @@ export default function ConfiguratorStepPage() {
             if (selectedNameType === 'Name') setCustomName(enteredName)
             if (next) {
             setDirection(1)
-            router.push(`/configurator/${product}/${next}`)
+            router.push(`/${product}/${next}`)
             }
         }}
         className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
@@ -478,27 +513,43 @@ export default function ConfiguratorStepPage() {
 
     {/* Step: Zusammenfassung */}
     {step === 'summary' && (
-    <div className="space-y-4">
+      <div className="space-y-4">
         <h1 className="text-2xl font-bold mb-6 text-[#262626]">Deine Auswahl</h1>
         <div className="p-8">
-            <ul className="space-y-2 text-[#262626]">
+          <ul className="space-y-2 text-[#262626]">
+            {config.flow.includes('gender') && (
               <li><strong>Geschlecht:</strong> {gender ?? '–'}</li>
+            )}
+            {config.flow.includes('size') && (
               <li><strong>Grösse:</strong> {storeSize ?? '–'}</li>
+            )}
+            {config.flow.includes('color') && (
               <li><strong>Farbe:</strong> {storeColor ?? '–'}</li>
+            )}
+            {config.flow.includes('druckfarbe') && (
               <li><strong>Druckfarbe:</strong> {storeDruckfarbe ?? '–'}</li>
+            )}
+            {config.flow.includes('hobbys') && (
               <li><strong>Hobbys:</strong> {storeHobbys?.length ? storeHobbys.join(', ') : '–'}</li>
+            )}
+            {config.flow.includes('landschaft') && (
               <li><strong>Landschaft:</strong> {storeLandschaft ?? '–'}</li>
+            )}
+            {config.flow.includes('text') && (
               <li><strong>Text:</strong> {storeNameType === 'Name' ? (storeCustomName || '–') : (storeNameType ?? '–')}</li>
-            </ul>
-            <button
-              onClick={handleAddToShopifyCart}
-              className="w-full mt-6 bg-black text-white py-3 rounded-xl hover:bg-gray-900"
-            >
-              Zum Warenkorb hinzufügen
-            </button>
-          </div>
-    </div>
+            )}
+          </ul>
+
+          <button
+            onClick={handleAddToShopifyCart}
+            className="w-full mt-6 bg-black text-white py-3 rounded-xl hover:bg-gray-900"
+          >
+            Zum Warenkorb hinzufügen
+          </button>
+        </div>
+      </div>
     )}
+
 
 
       {/* Default Step */}
@@ -509,7 +560,7 @@ export default function ConfiguratorStepPage() {
 
           {next && (
             <button
-              onClick={() => router.push(`/configurator/${product}/${next}`)}
+              onClick={() => router.push(`/${product}/${next}`)}
               className="w-full bg-black text-white py-3 mt-6 rounded-xl hover:bg-gray-900"
             >
               Weiter
