@@ -1,3 +1,5 @@
+// app/[product]/page.tsx
+
 import { redirect } from 'next/navigation'
 import { getProductConfigBySlug } from '@/lib/getProductConfig'
 
@@ -5,13 +7,14 @@ interface PageProps {
   params: { product: string }
 }
 
-export default async function ProductPage({ params }: PageProps) {
+export default function ProductPage({ params }: PageProps) {
   const config = getProductConfigBySlug(params.product)
 
-  if (!config) {
-    return <p>❌ Produkt nicht gefunden.</p>
+  if (!config || config.flow.length === 0) {
+    // Optional: Du kannst hier auch eine 404-Seite rendern
+    return redirect('/404')
   }
 
   const firstStep = config.flow[0]
-  redirect(`/configurator/${params.product}/${firstStep}`)
+  return redirect(`/${params.product}/${firstStep}`)
 }
