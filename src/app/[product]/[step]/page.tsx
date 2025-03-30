@@ -49,6 +49,9 @@ export default function ConfiguratorStepPage() {
   const [selectedNameType, setSelectedNameType] = useState('')
   const [enteredName, setEnteredName] = useState('')
 
+  const [hoodieFarben, setHoodieFarben] = useState<{ name: string; url: string }[]>([])
+  const [hoodieKidsFarben, setHoodieKidsFarben] = useState<{ name: string; url: string }[]>([])
+
   const [showInfo, setShowInfo] = useState(false)
   const [druckfarben, setDruckfarben] = useState<string[]>([])
   const [hobbyList, setHobbyList] = useState<{ name: string; thumbnail: string }[]>([])
@@ -93,13 +96,50 @@ export default function ConfiguratorStepPage() {
 
   useEffect(() => {
     if (step === 'druckfarbe') {
-      fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-druckfarben?fields=Farbe')
+      fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-druckfarben')
         .then((res) => res.json())
         .then((data) => {
-          const farben = data.data.map((item: any) => item.Farbe)
+          const farben = data.data.map((item: any) => ({
+            name: item.Farbe,
+            code: item.Code,
+          }))
           setDruckfarben(farben)
         })
     }
+  }, [step])
+
+  useEffect(() => {
+    if (step !== 'color') return;
+  
+    const fetchColors = async () => {
+      if (product.includes('hoodie-fuer-kids')) {
+        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-kids-farbens?populate=*')
+        const data = await res.json()
+        if (!data || !Array.isArray(data.data)) {
+          console.error('❌ Fehler beim Laden der Farben:', data)
+          return
+        }
+        const farben = data.data.map((item: any) => ({
+          name: item.Farbe,
+          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+        }))
+        setHoodieKidsFarben(farben)
+      } else if (product.includes('hoodie')) {
+        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-farbens?populate=*')
+        const data = await res.json()
+        if (!data || !Array.isArray(data.data)) {
+          console.error('❌ Fehler beim Laden der Farben:', data)
+          return
+        }
+        const farben = data.data.map((item: any) => ({
+          name: item.Farbe,
+          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+        }))
+        setHoodieFarben(farben)
+      }
+    }
+  
+    fetchColors()
   }, [step])
 
   useEffect(() => {
@@ -277,7 +317,7 @@ export default function ConfiguratorStepPage() {
       )}
 
       {/* Step: Color */}
-      {step === 'color' && config.colors && (
+      {step === 'color' && (
         <>
           <h1 className="text-2xl font-bold mb-6 text-[#262626]">
             {product.includes('tshirt')
@@ -291,18 +331,50 @@ export default function ConfiguratorStepPage() {
               : 'Farbe wählen'}
           </h1>
 
-          <select
-            value={selectedColor}
-            onChange={(e) => setSelectedColor(e.target.value)}
-            className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
-          >
-            <option>Wähle deine Farbe aus</option>
-            {config.colors.map((color) => (
-              <option key={color} value={color}>
-                {color}
-              </option>
-            ))}
-          </select>
+          {product.includes('hoodie') ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+              {(product.includes('hoodie-fuer-kids') ? hoodieKidsFarben : hoodieFarben).map((farbe) => {
+                const selected = selectedColor === farbe.name
+                return (
+                  <div
+                    key={farbe.name}
+                    onClick={() => setSelectedColor(farbe.name)}
+                    className={`group cursor-pointer border rounded-xl p-2 flex flex-col items-center justify-between h-44 transition ${
+                      selected ? 'scale-110 border-black bg-gray-100' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
+                      {farbe.url && (
+                        <Image
+                          src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
+                          alt={farbe.name}
+                          width={80}
+                          height={80}
+                          className="object-contain transition-transform duration-300 group-hover:scale-110"
+                        />
+                      )}
+                    </div>
+                    <p className="text-center text-sm text-[#262626]">{farbe.name}</p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              <select
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+                className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
+              >
+                <option>Wähle deine Farbe aus</option>
+                {config.colors?.map((color) => (
+                  <option key={color} value={color}>
+                    {color}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
 
           <button
             disabled={!selectedColor || selectedColor === 'Wähle deine Farbe aus'}
@@ -313,33 +385,42 @@ export default function ConfiguratorStepPage() {
                 router.push(`/${product}/${next}`)
               }
             }}
-            className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
+            className="w-full text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
           >
             Weiter
           </button>
         </>
       )}
 
+
       {/* Step: Druckfarbe */}
       {step === 'druckfarbe' && (
         <>
           <h1 className="text-2xl font-bold mb-6 text-[#262626]">Wähle deine Druckfarbe</h1>
 
-          <select
-            value={selectedDruckfarbe}
-            onChange={(e) => setSelectedDruckfarbe(e.target.value)}
-            className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
-          >
-            <option>Wähle eine Druckfarbe aus</option>
-            {druckfarben.map((farbe) => (
-              <option key={farbe} value={farbe}>
-                {farbe}
-              </option>
-            ))}
-          </select>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-6">
+            {druckfarben.map((farbe) => {
+              const selected = selectedDruckfarbe === farbe.name
+              return (
+                <div
+                  key={farbe.name}
+                  onClick={() => setSelectedDruckfarbe(farbe.name)}
+                  className={`cursor-pointer rounded-xl flex flex-col items-center justify-center border p-2 transition ${
+                    selected ? 'border-black ring-2 ring-black scale-105' : 'hover:scale-105'
+                  }`}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full mb-2 border border-gray-300"
+                    style={{ backgroundColor: farbe.code || '#fff' }}
+                  />
+                  <p className="text-sm text-[#262626]">{farbe.name}</p>
+                </div>
+              )
+            })}
+          </div>
 
           <button
-            disabled={!selectedDruckfarbe || selectedDruckfarbe === 'Wähle eine Druckfarbe aus'}
+            disabled={!selectedDruckfarbe}
             onClick={() => {
               setDruckfarbe(selectedDruckfarbe)
               if (next) {
@@ -354,8 +435,9 @@ export default function ConfiguratorStepPage() {
         </>
       )}
 
-    {step === 'hobbys' && hasMounted && typeof window !== 'undefined' && (
 
+{/* Step: Hobbys */}
+    {step === 'hobbys' && hasMounted && typeof window !== 'undefined' && (
     <>
         <h1 className="text-2xl font-bold mb-6 text-[#262626]">
           {config.maxHobbys === 1 ? 'Wähle ein Hobby' : `Wähle bis zu ${config.maxHobbys ?? 3} Hobbys`}
