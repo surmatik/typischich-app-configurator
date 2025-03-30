@@ -1,17 +1,15 @@
+// src/app/[product]/page.tsx
+
 import { redirect } from 'next/navigation'
 import { getProductConfigBySlug } from '@/lib/getProductConfig'
 
-interface Props {
-  params: { product: string }
-}
-
-export default function ConfiguratorEntryPage({ params }: Props) {
+export default async function Page({ params }: { params: { product: string } }) {
   const config = getProductConfigBySlug(params.product)
 
-  if (!config || config.flow.length === 0) {
-    return <p className="p-8">❌ Produkt nicht gefunden oder kein Ablauf definiert.</p>
+  if (!config) {
+    return <p className="p-8">❌ Produkt nicht gefunden.</p>
   }
 
-  const firstStep = config.flow[0]
+  const firstStep = config.flow[0] ?? 'summary'
   redirect(`/${params.product}/${firstStep}`)
 }
