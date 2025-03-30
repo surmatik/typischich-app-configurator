@@ -1,16 +1,18 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useParams, useRouter } from 'next/navigation'
 import { getProductConfigBySlug } from '@/lib/getProductConfig'
+import { useEffect } from 'react'
 
-export default function ProductPage({ params }: { params: { product: string } }) {
-  const config = getProductConfigBySlug(params.product)
+export default function Page() {
+  const router = useRouter()
+  const { product } = useParams()
+  const config = getProductConfigBySlug(product as string)
 
-  if (!config || config.flow.length === 0) {
-    return (
-      <div className="p-8 text-center text-[#262626]">
-        ❌ Produkt nicht gefunden.
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (!config || config.flow.length === 0) return
+    router.push(`/${product}/${config.flow[0]}`)
+  }, [product])
 
-  redirect(`/${params.product}/${config.flow[0]}`)
+  return <p className="p-8">🔄 Weiterleitung...</p>
 }
