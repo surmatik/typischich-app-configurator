@@ -1,11 +1,17 @@
 import { redirect } from 'next/navigation'
 import { getProductConfigBySlug } from '@/lib/getProductConfig'
 
-export default async function ProductPage({ params }: { params: { product: string } }) {
+type Props = {
+  params: {
+    product: string
+  }
+}
+
+export default async function ProductPage({ params }: Props) {
   const config = getProductConfigBySlug(params.product)
 
   if (!config || config.flow.length === 0) {
-    redirect('/404') // oder eine Fehlerseite deiner Wahl
+    redirect('/404') // oder ein Fallback
   }
 
   const firstStep = config.flow[0]
