@@ -5,10 +5,12 @@ export default function ProductPage({ params }: { params: { product: string } })
   const config = getProductConfigBySlug(params.product)
 
   if (!config || config.flow.length === 0) {
-    redirect('/404')
+    return (
+      <div className="p-8 text-center text-[#262626]">
+        ❌ Produkt nicht gefunden.
+      </div>
+    )
   }
 
-  // Direkt zum ersten Step weiterleiten
-  const firstStep = config.flow[0]
-  redirect(`/${params.product}/${firstStep}`)
+  redirect(`/${params.product}/${config.flow[0]}`)
 }
