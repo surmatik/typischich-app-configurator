@@ -385,7 +385,7 @@ export default function ConfiguratorStepPage() {
                 router.push(`/${product}/${next}`)
               }
             }}
-            className="w-full text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
+            className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
           >
             Weiter
           </button>
