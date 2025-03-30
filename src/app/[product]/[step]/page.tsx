@@ -53,7 +53,7 @@ export default function ConfiguratorStepPage() {
   const [hoodieKidsFarben, setHoodieKidsFarben] = useState<{ name: string; url: string }[]>([])
 
   const [showInfo, setShowInfo] = useState(false)
-  const [druckfarben, setDruckfarben] = useState<string[]>([])
+  const [druckfarben, setDruckfarben] = useState<{ name: string; code: string }[]>([])
   const [hobbyList, setHobbyList] = useState<{ name: string; thumbnail: string }[]>([])
   const [landschaften, setLandschaften] = useState<{ id: number; name: string; url: string }[]>([])
   const [search, setSearch] = useState('')
