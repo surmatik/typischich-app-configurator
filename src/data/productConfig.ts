@@ -1,13 +1,13 @@
 export interface ProductConfig {
-    id: string
-    title: string
-    slug: string
-    flow: string[]
-    genderOptions?: string[]
-    sizes?: string[]
-    colors?: string[]
-  }
-  
+  id: string
+  title: string
+  slug: string
+  flow: string[]
+  genderOptions?: string[]
+  sizes?: string[]
+  colors?: string[]
+  maxHobbys?: number
+}
 export const productConfigs: ProductConfig[] = [
     {
       id: '51964063285577',
@@ -30,6 +30,7 @@ export const productConfigs: ProductConfig[] = [
         '3XL (nur für Herrengrösse)',
       ],
       colors: ['schwarz', 'weiss'],
+      maxHobbys: 3
     },
     {
       id: '51964065972553',
@@ -43,6 +44,7 @@ export const productConfigs: ProductConfig[] = [
         'eisblau', 'blau', 'dunkelblau', 'grüngelb', 'eisgrün', 'hellgrün', 'waldgrün',
         'schokoladenbraun', 'dunkelgrau',
       ],
+      maxHobbys: 3
     },
     {
       id: '51964072919369',
@@ -51,6 +53,7 @@ export const productConfigs: ProductConfig[] = [
       flow: ['size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
       sizes: ['Wähle eine Grösse aus','122/128', '134/146', '152/164'],
       colors: ['schwarz', 'pink', 'rot', 'hellblau', 'blau', 'dunkelblau', 'hellgrün'],
+      maxHobbys: 3
     },
     {
       id: '52005733269833',
@@ -58,12 +61,15 @@ export const productConfigs: ProductConfig[] = [
       slug: 'mein-persoenlicher-beanie',
       flow: ['color', 'hobbys', 'text', 'summary'],
       colors: ['olivegrün', 'dunkelblau', 'grau', 'schwarz'],
+      maxHobbys: 1
     },
     {
       id: '52005739495753',
       title: 'Mein persönlicher Schlüsselanhänger',
       slug: 'mein-persoenlicher-schluesselanhaenger',
       flow: ['hobbys', 'druckfarbe', 'text', 'summary'],
+      colors: ['grau'],
+      maxHobbys: 1
     },
     {
       id: '52005744312649',
@@ -71,6 +77,7 @@ export const productConfigs: ProductConfig[] = [
       slug: 'mein-kleiner-filz-bag',
       flow: ['color', 'hobbys', 'druckfarbe', 'text', 'summary'],
       colors: ['dunkelgrau', 'hellgrau'],
+      maxHobbys: 1
     },
     {
       id: '52005751193929',

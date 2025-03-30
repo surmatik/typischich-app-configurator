@@ -357,7 +357,9 @@ export default function ConfiguratorStepPage() {
     {step === 'hobbys' && hasMounted && typeof window !== 'undefined' && (
 
     <>
-        <h1 className="text-2xl font-bold mb-6 text-[#262626]">Wähle bis zu 3 Hobbys</h1>
+        <h1 className="text-2xl font-bold mb-6 text-[#262626]">
+          {config.maxHobbys === 1 ? 'Wähle ein Hobby' : `Wähle bis zu ${config.maxHobbys ?? 3} Hobbys`}
+        </h1>
 
         <input
         type="text"
@@ -378,7 +380,7 @@ export default function ConfiguratorStepPage() {
                 onClick={() => {
                     if (selected) {
                     setSelectedHobbys(selectedHobbys.filter((h) => h !== hobby.name))
-                    } else if (selectedHobbys.length < 3) {
+                    } else if (selectedHobbys.length < (config.maxHobbys || 3)) {
                     setSelectedHobbys([...selectedHobbys, hobby.name])
                     }
                 }}
@@ -404,7 +406,7 @@ export default function ConfiguratorStepPage() {
         </div>
 
         <button
-        disabled={selectedHobbys.length === 0 || selectedHobbys.length > 3}
+        disabled={selectedHobbys.length === 0 || selectedHobbys.length > (config.maxHobbys || 3)}
         onClick={() => {
             setHobbys(selectedHobbys)
             if (next) {
@@ -468,48 +470,79 @@ export default function ConfiguratorStepPage() {
     )}
 
     {step === 'text' && (
-    <>
-        <h1 className="text-2xl font-bold mb-6 text-[#262626]">"Name" oder "Typisch Ich" unter das Motiv</h1>
-        <div className="space-y-4 mb-6">
-        {['Name', 'Typisch Ich', 'Nichts'].map((option) => (
+      <>
+        {product === 'mein-persoenlicher-schluesselanhaenger' ? (
+          <>
+            <h1 className="text-2xl font-bold mb-6 text-[#262626]">Name oder Bezeichnung</h1>
+            <input
+              type="text"
+              placeholder="z. B. Schlüssel, Rucksack, Büro …"
+              value={enteredName}
+              onChange={(e) => setEnteredName(e.target.value)}
+              className="w-full p-3 border rounded-xl mb-6 bg-white text-[#262626]"
+            />
+
             <button
-            key={option}
-            onClick={() => setSelectedNameType(option)}
-            className={`w-full py-3 rounded-xl border text-[#262626] hover:bg-gray-50 transition ${
-                selectedNameType === option ? 'bg-black text-white border-black' : 'bg-white border-gray-300'
-            }`}
+              disabled={enteredName.trim() === ''}
+              onClick={() => {
+                setNameType('Name')
+                setCustomName(enteredName)
+                if (next) {
+                  setDirection(1)
+                  router.push(`/${product}/${next}`)
+                }
+              }}
+              className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
             >
-            {option}
+              Weiter
             </button>
-        ))}
-        </div>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold mb-6 text-[#262626]">"Name" oder "Typisch Ich" unter das Motiv</h1>
+            <div className="space-y-4 mb-6">
+              {['Name', 'Typisch Ich', 'Nichts'].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setSelectedNameType(option)}
+                  className={`w-full py-3 rounded-xl border text-[#262626] hover:bg-gray-50 transition ${
+                    selectedNameType === option ? 'bg-black text-white border-black' : 'bg-white border-gray-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
 
-        {selectedNameType === 'Name' && (
-        <input
-            type="text"
-            placeholder="Gib deinen Namen ein"
-            value={enteredName}
-            onChange={(e) => setEnteredName(e.target.value)}
-            className="w-full p-3 border rounded-xl mb-6 bg-white text-[#262626]"
-        />
+            {selectedNameType === 'Name' && (
+              <input
+                type="text"
+                placeholder="Gib deinen Namen ein"
+                value={enteredName}
+                onChange={(e) => setEnteredName(e.target.value)}
+                className="w-full p-3 border rounded-xl mb-6 bg-white text-[#262626]"
+              />
+            )}
+
+            <button
+              disabled={!selectedNameType || (selectedNameType === 'Name' && enteredName.trim() === '')}
+              onClick={() => {
+                setNameType(selectedNameType as any)
+                if (selectedNameType === 'Name') setCustomName(enteredName)
+                if (next) {
+                  setDirection(1)
+                  router.push(`/${product}/${next}`)
+                }
+              }}
+              className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
+            >
+              Weiter
+            </button>
+          </>
         )}
-
-        <button
-        disabled={!selectedNameType || (selectedNameType === 'Name' && enteredName.trim() === '')}
-        onClick={() => {
-            setNameType(selectedNameType as any)
-            if (selectedNameType === 'Name') setCustomName(enteredName)
-            if (next) {
-            setDirection(1)
-            router.push(`/${product}/${next}`)
-            }
-        }}
-        className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
-        >
-        Weiter
-        </button>
-    </>
+      </>
     )}
+
 
     {/* Step: Zusammenfassung */}
     {step === 'summary' && (
