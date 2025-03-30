@@ -1,18 +1,22 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { getProductConfigBySlug } from '@/lib/getProductConfig'
 import { useEffect } from 'react'
+import { getProductConfigBySlug } from '@/lib/getProductConfig'
 
 export default function Page() {
   const router = useRouter()
   const { product } = useParams()
-  const config = getProductConfigBySlug(product as string)
 
   useEffect(() => {
-    if (!config || config.flow.length === 0) return
-    router.push(`/${product}/${config.flow[0]}`)
+    if (!product) return
+    const config = getProductConfigBySlug(product as string)
+    if (config && config.flow.length > 0) {
+      router.replace(`/${product}/${config.flow[0]}`)
+    }
   }, [product])
 
-  return <p className="p-8">🔄 Weiterleitung...</p>
+  return (
+    <div className="bg-white min-h-screen" />
+  )
 }
