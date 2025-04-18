@@ -60,6 +60,8 @@ export default function ConfiguratorStepPage() {
 
   const prevStepRef = useRef(step)
 
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
   useEffect(() => {
     const newIndex = config.flow.indexOf(step)
     setDirection(newIndex > prevIndex ? 1 : -1)
@@ -294,10 +296,92 @@ export default function ConfiguratorStepPage() {
             </button>
 
             {showInfo && (
+            <>
               <p className="text-sm text-gray-700 mt-2">
                 Die Grössenangaben sind eher knapp bemessen. Beachte doch die Masstabelle für deine Entscheidung.
               </p>
-            )}
+
+              <div className="flex flex-col space-y-6 mt-6">
+              {(product.includes('tshirt') || product.includes('gipfelstuermer')) && (
+                <div className="flex flex-col space-y-6 mt-6">
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Frauen_Bild_Webseite_03a5b053f4.png"
+                    alt="T-Shirt Frauen"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Frauen_Bild_Webseite_03a5b053f4.png')}
+                  />
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Herren_Bild_Webseite_fd11392a7e.png"
+                    alt="T-Shirt Herren"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Herren_Bild_Webseite_fd11392a7e.png')}
+                  />
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Kinder_Bild_Webseite_374ca21933.png"
+                    alt="T-Shirt Kinder"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Kinder_Bild_Webseite_374ca21933.png')}
+                  />
+                </div>
+              )}
+              {(product.includes('hoodie') || product.includes('waldfreund')) && !product.includes('hoodie-fuer-kids') && (
+                <div className="flex flex-col space-y-6 mt-6">
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Frauen_Bild_Webseite_847bd24c15.png"
+                    alt="Hoodie Frauen"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Frauen_Bild_Webseite_847bd24c15.png')}
+                  />
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Herren_Bild_Webseite_0f37032537.png"
+                    alt="Hoodie Herren"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Herren_Bild_Webseite_0f37032537.png')}
+                  />
+                </div>
+              )}
+              {product.includes('hoodie-fuer-kids') && (
+                <div className="flex flex-col space-y-6 mt-6">
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Kids_Groessentabelle_9dd3bbe16d.png"
+                    alt="Hoodie Kids"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Kids_Groessentabelle_9dd3bbe16d.png')}
+                  />
+                </div>
+              )}
+
+              {selectedImage && (
+                <div
+                  className="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <div
+                    className="relative bg-white p-4 rounded-lg max-w-4xl w-[90%]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Schliessen-Button */}
+                    <button
+                      className="absolute top-4 right-4 text-2xl font-bold text-gray-600 hover:text-black"
+                      onClick={() => setSelectedImage(null)}
+                      aria-label="Schliessen"
+                    >
+                      &times;
+                    </button>
+
+                    <img
+                      src={selectedImage}
+                      alt="Vollbild"
+                      className="w-full h-auto object-contain rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
+              </div>
+
+            </>
+  )}
+
           </div>
 
           <button
