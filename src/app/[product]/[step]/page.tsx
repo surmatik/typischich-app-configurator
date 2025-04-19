@@ -537,6 +537,7 @@ export default function ConfiguratorStepPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
         {hobbyList
+            .sort((a, b) => a.name.localeCompare(b.name))
             .filter((h) => h.name.toLowerCase().includes(search.toLowerCase()))
             .map((hobby) => {
             const selected = selectedHobbys.includes(hobby.name)
@@ -561,7 +562,7 @@ export default function ConfiguratorStepPage() {
                     alt={hobby.name}
                     width={80}
                     height={80}
-                    className="object-contain transition-transform duration-300 group-hover:scale-110"
+                    className="object-contain transition-transform duration-300 group-hover:scale-110 hobby-image"
                   />
                     )}
                 </div>
