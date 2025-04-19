@@ -291,24 +291,28 @@ export default function ConfiguratorStepPage() {
         <>
           <h1 className="text-2xl font-bold mb-6 text-[#262626]">Ich bin ...</h1>
           <div className="space-y-4">
-            {config.genderOptions.map((g) => (
-              <button
-                key={g}
-                onClick={() => {
-                  setGender(g as any)
-                  if (next) {
-                    setDirection(1)
-                    router.push(`/${product}/${next}`)
-                  }
-                }}
-                className="w-full py-3 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-300 text-[#262626]"
-              >
-                ... eine {g}
-              </button>
-            ))}
+            {config.genderOptions.map((g) => {
+              const artikel = g.toLowerCase() === 'mann' || g.toLowerCase() === 'kind' ? 'ein' : 'eine'
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setGender(g as any)
+                    if (next) {
+                      setDirection(1)
+                      router.push(`/${product}/${next}`)
+                    }
+                  }}
+                  className="w-full py-3 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-300 text-[#262626]"
+                >
+                  ... {artikel} {g}
+                </button>
+              )
+            })}
           </div>
         </>
       )}
+
 
       {/* Step: Size */}
       {step === 'size' && config.sizes && (
