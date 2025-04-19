@@ -58,9 +58,10 @@ export default function ConfiguratorStepPage() {
   const [landschaften, setLandschaften] = useState<{ id: number; name: string; url: string }[]>([])
   const [search, setSearch] = useState('')
 
-  const prevStepRef = useRef(step)
-
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
+  const prevHobbysRef = useRef<string[]>([])
+
 
   useEffect(() => {
     const newIndex = config.flow.indexOf(step)
@@ -72,19 +73,58 @@ export default function ConfiguratorStepPage() {
     setHasMounted(true)
   }, [])
 
+  // Size
   useEffect(() => {
-    const prevStep = prevStepRef.current
-    if (prevStep === 'size') setSize(selectedSize)
-    if (prevStep === 'color') setColor(selectedColor)
-    if (prevStep === 'druckfarbe') setDruckfarbe(selectedDruckfarbe)
-    if (prevStep === 'hobbys') setHobbys(selectedHobbys)
-    if (prevStep === 'landschaft') setLandschaft([selectedLandschaft])
-    if (prevStep === 'text') {
-      setNameType(selectedNameType as any)
-      if (selectedNameType === 'Name') setCustomName(enteredName)
+    if (selectedSize && selectedSize !== storeSize) {
+      setSize(selectedSize)
     }
-    prevStepRef.current = step
-  }, [step])
+  }, [selectedSize, storeSize])
+
+  // Color
+  useEffect(() => {
+    if (selectedColor && selectedColor !== storeColor) {
+      setColor(selectedColor)
+    }
+  }, [selectedColor, storeColor])
+
+  // Druckfarbe
+  useEffect(() => {
+    if (selectedDruckfarbe && selectedDruckfarbe !== storeDruckfarbe) {
+      setDruckfarbe(selectedDruckfarbe)
+    }
+  }, [selectedDruckfarbe, storeDruckfarbe])
+
+  // Hobbys
+  useEffect(() => {
+    const current = JSON.stringify(selectedHobbys)
+    const prev = JSON.stringify(prevHobbysRef.current)
+    if (current !== prev) {
+      setHobbys(selectedHobbys)
+      prevHobbysRef.current = selectedHobbys
+    }
+  }, [selectedHobbys])
+
+  // Landschaft
+  useEffect(() => {
+    if (selectedLandschaft && selectedLandschaft !== storeLandschaft[0]) {
+      setLandschaft([selectedLandschaft])
+    }
+  }, [selectedLandschaft, storeLandschaft])
+
+  // Textauswahl (Name, Typisch Ich, Nichts)
+  useEffect(() => {
+    if (selectedNameType && selectedNameType !== storeNameType) {
+      setNameType(selectedNameType)
+    }
+  }, [selectedNameType, storeNameType])
+
+  // Eingetippter Name
+  useEffect(() => {
+    if (selectedNameType === 'Name' && enteredName !== storeCustomName) {
+      setCustomName(enteredName)
+    }
+  }, [enteredName, selectedNameType, storeCustomName])
+
 
   useEffect(() => {
     setSelectedSize(storeSize || '')
@@ -614,7 +654,7 @@ export default function ConfiguratorStepPage() {
                     className="w-full h-auto rounded-lg object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                 />
                 </div>
-                <p className="text-center text-sm py-2 text-[#262626] font-medium">{l.name}</p>
+                <p className="text-center text-sm py-2 text-[#262626] font-medium">{l.name} (Beispiel)</p>
             </div>
             )
         })}
@@ -643,7 +683,7 @@ export default function ConfiguratorStepPage() {
             <h1 className="text-2xl font-bold mb-6 text-[#262626]">Name oder Bezeichnung</h1>
             <input
               type="text"
-              placeholder="z. B. Schlüssel, Rucksack, Büro …"
+              placeholder="z. B. Büro, Camper, Gartenhaus, Briefkasten, Werkstatt …"
               value={enteredName}
               onChange={(e) => setEnteredName(e.target.value)}
               className="w-full p-3 border rounded-xl mb-6 bg-white text-[#262626]"
