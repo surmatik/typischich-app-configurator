@@ -14,13 +14,9 @@ export const productConfigs: ProductConfig[] = [
       title: 'Mein persönliches T-Shirt',
       slug: 'mein-persoenliches-tshirt',
       flow: ['gender', 'size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
-      genderOptions: ['Frau', 'Mann', 'Kind'],
+      genderOptions: ['Frau', 'Mann'],
       sizes: [
         'Wähle eine Grösse aus',
-        '122 / 128 (S)',
-        '134 / 140 (M)',
-        '146 / 152 (L)',
-        '158 / 164 (XL)',
         'XS (nur für Frauengrösse)',
         'S',
         'M',
@@ -28,6 +24,22 @@ export const productConfigs: ProductConfig[] = [
         'XL',
         'XXL',
         '3XL (nur für Herrengrösse)',
+      ],
+      colors: ['schwarz', 'weiss'],
+      maxHobbys: 3
+    },
+    {
+      id: '52572910190921',
+      title: 'Mein persönliches Kinder T-Shirt',
+      slug: 'mein-persoenliches-kinder-tshirt',
+      flow: ['size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
+      genderOptions: ['Frau', 'Mann', 'Kind'],
+      sizes: [
+        'Wähle eine Grösse aus',
+        '122 / 128 (S)',
+        '134 / 140 (M)',
+        '146 / 152 (L)',
+        '158 / 164 (XL)',
       ],
       colors: ['schwarz', 'weiss'],
       maxHobbys: 3
@@ -149,7 +161,7 @@ export const productConfigs: ProductConfig[] = [
       ],
       colors: ['schwarz', 'weiss'],
     },
-        {
+    {
       id: '52572840689993',
       title: 'Meine persönliche Trinkflasche',
       slug: 'meine-persoenliche-trinkflasche',
