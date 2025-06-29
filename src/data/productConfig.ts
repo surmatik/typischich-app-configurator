@@ -149,5 +149,13 @@ export const productConfigs: ProductConfig[] = [
       ],
       colors: ['schwarz', 'weiss'],
     },
+        {
+      id: '52572840689993',
+      title: 'Meine persönliche Trinkflasche',
+      slug: 'meine-persoenliche-trinkflasche',
+      flow: ['hobbys', 'landschaft', 'text', 'summary'],
+      colors: ['schwarz'],
+      maxHobbys: 3
+    },
   ]
   
