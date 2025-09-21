@@ -68,6 +68,20 @@ export const productConfigs: ProductConfig[] = [
       maxHobbys: 3
     },
     {
+      id: '52979688014153',
+      title: 'Mein persönlicher Pullover',
+      slug: 'mein-mein-persoenlicher-pullover',
+      flow: ['gender', 'size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
+      genderOptions: ['Frau', 'Mann'],
+      sizes: ['Wähle eine Grösse aus','XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL (nur Herrengrösse)'],
+      colors: [
+        'schwarz', 'weiss', 'gelb', 'orange', 'rot', 'bordeaux rot', 'soft rosa', 'pink', 'violett',
+        'eisblau', 'blau', 'dunkelblau', 'grüngelb', 'eisgrün', 'hellgrün', 'waldgrün',
+        'schokoladenbraun', 'dunkelgrau',
+      ],
+      maxHobbys: 3
+    },
+    {
       id: '52005733269833',
       title: 'Mein persönlicher Beanie',
       slug: 'mein-persoenlicher-beanie',
