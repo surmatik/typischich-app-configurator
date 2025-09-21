@@ -70,7 +70,7 @@ export const productConfigs: ProductConfig[] = [
     {
       id: '52979688014153',
       title: 'Mein persönlicher Pullover',
-      slug: 'mein-mein-persoenlicher-pullover',
+      slug: 'mein-persoenlicher-pullover',
       flow: ['gender', 'size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
       genderOptions: ['Frau', 'Mann'],
       sizes: ['Wähle eine Grösse aus','XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL (nur Herrengrösse)'],
