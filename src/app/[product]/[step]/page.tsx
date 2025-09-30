@@ -346,54 +346,75 @@ export default function ConfiguratorStepPage() {
               </p>
 
               <div className="flex flex-col space-y-6 mt-6">
-              {(product.includes('tshirt') || product.includes('gipfelstuermer')) && (
+              {(product.includes('tshirt') || product.includes('t-shirt') || product.includes('gipfelstuermer')) && !product.includes('kinder-tshirt') && (
                 <div className="flex flex-col space-y-6 mt-6">
                   <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Frauen_Bild_Webseite_03a5b053f4.png"
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_Frauen_5a6a8414c2.png"
                     alt="T-Shirt Frauen"
                     className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Frauen_Bild_Webseite_03a5b053f4.png')}
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_Frauen_5a6a8414c2.png')}
                   />
                   <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Herren_Bild_Webseite_fd11392a7e.png"
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_Herren_6a23b8e615.png"
                     alt="T-Shirt Herren"
                     className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Herren_Bild_Webseite_fd11392a7e.png')}
-                  />
-                  <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Kinder_Bild_Webseite_374ca21933.png"
-                    alt="T-Shirt Kinder"
-                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Shirt_Kinder_Bild_Webseite_374ca21933.png')}
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_Herren_6a23b8e615.png')}
                   />
                 </div>
               )}
-              {(product.includes('hoodie') || product.includes('waldfreund')) && !product.includes('hoodie-fuer-kids') && (
+              {product.includes('kinder-tshirt') && (
                 <div className="flex flex-col space-y-6 mt-6">
                   <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Frauen_Bild_Webseite_847bd24c15.png"
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_K_Inder_393a9b4a80.png"
+                    alt="Hoodie Kids"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/T_Shirt_Groessenangaben_K_Inder_393a9b4a80.png')}
+                  />
+                </div>
+              )}
+              {product.includes('hoodie')  && !product.includes('hoodie-fuer-kids') && (
+                <div className="flex flex-col space-y-6 mt-6">
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_Frauen_e91092f47c.png"
                     alt="Hoodie Frauen"
                     className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Frauen_Bild_Webseite_847bd24c15.png')}
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_Frauen_e91092f47c.png')}
                   />
                   <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Herren_Bild_Webseite_0f37032537.png"
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_Herren_0fe478501c.png"
                     alt="Hoodie Herren"
                     className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Groessentabelle_Hoodie_Herren_Bild_Webseite_0f37032537.png')}
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_Herren_0fe478501c.png')}
                   />
                 </div>
               )}
               {product.includes('hoodie-fuer-kids') && (
                 <div className="flex flex-col space-y-6 mt-6">
                   <img
-                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Kids_Groessentabelle_9dd3bbe16d.png"
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_K_Inder_7c9fac9543.png"
                     alt="Hoodie Kids"
                     className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
-                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Kids_Groessentabelle_9dd3bbe16d.png')}
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Hoodie_Groessenangaben_K_Inder_7c9fac9543.png')}
                   />
                 </div>
               )}
+              {product.includes('pullover') && (
+                <div className="flex flex-col space-y-6 mt-6">
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Pullover_Groessenangaben_Frauen_d84b999d71.png"
+                    alt="Pullover Frauen"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Pullover_Groessenangaben_Frauen_d84b999d71.png')}
+                  />
+                  <img
+                    src="https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Pullover_Groessenangaben_Herren_b1a6c98cae.png"
+                    alt="Pullover Herren"
+                    className="w-full h-auto object-contain rounded-xl shadow cursor-zoom-in"
+                    onClick={() => setSelectedImage('https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Pullover_Groessenangaben_Herren_b1a6c98cae.png')}
+                  />
+                </div>
+              )}
+
 
               {selectedImage && (
                 <div

@@ -183,5 +183,13 @@ export const productConfigs: ProductConfig[] = [
       colors: ['schwarz'],
       maxHobbys: 3
     },
+    {
+      id: '53038848409929',
+      title: 'Mein persönlicher Rucksack',
+      slug: 'mein-persoenlicher-rucksack',
+      flow: ['hobbys', 'landschaft', 'druckfarbe', 'text', 'summary'],
+      colors: ['schwarz'],
+      maxHobbys: 3
+    },
   ]
   
