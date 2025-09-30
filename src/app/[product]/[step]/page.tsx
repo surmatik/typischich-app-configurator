@@ -51,7 +51,7 @@ export default function ConfiguratorStepPage() {
 
   const [hoodieFarben, setHoodieFarben] = useState<{ name: string; url: string }[]>([])
   const [hoodieKidsFarben, setHoodieKidsFarben] = useState<{ name: string; url: string }[]>([])
-  const [pulloverFarben, setPulloverFarben] = useState<ColorType[]>([]);
+  const [pulloverFarben, setPulloverFarben] = useState<{ name: string; url: string }[]>([])
 
   const [showInfo, setShowInfo] = useState(false)
   const [druckfarben, setDruckfarben] = useState<{ name: string; code: string }[]>([])
