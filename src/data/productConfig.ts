@@ -25,7 +25,7 @@ export const productConfigs: ProductConfig[] = [
         'XXL',
         '3XL (nur für Herrengrösse)',
       ],
-      colors: ['schwarz', 'weiss'],
+      colors: ['schwarz', 'grau', 'weiss'],
       maxHobbys: 3
     },
     {
@@ -136,13 +136,9 @@ export const productConfigs: ProductConfig[] = [
       title: 'T-Shirt für den Gipfelstürmer',
       slug: 't-shirt-fuer-den-gipfelsturmer',
       flow: ['gender', 'size', 'color', 'druckfarbe', 'summary'],
-      genderOptions: ['Frau', 'Mann', 'Kind'],
+      genderOptions: ['Frau', 'Mann'],
       sizes: [
         'Wähle eine Grösse aus',
-        '122 / 128 (S)',
-        '134 / 140 (M)',
-        '146 / 152 (L)',
-        '158 / 164 (XL)',
         'XS (nur für Frauengrösse)',
         'S',
         'M',
@@ -158,13 +154,9 @@ export const productConfigs: ProductConfig[] = [
       title: 'T-Shirt für den Waldfreund',
       slug: 't-shirt-fuer-den-waldfreund',
       flow: ['gender', 'size', 'color', 'druckfarbe', 'summary'],
-      genderOptions: ['Frau', 'Mann', 'Kind'],
+      genderOptions: ['Frau', 'Mann'],
       sizes: [
         'Wähle eine Grösse aus',
-        '122 / 128 (S)',
-        '134 / 140 (M)',
-        '146 / 152 (L)',
-        '158 / 164 (XL)',
         'XS (nur für Frauengrösse)',
         'S',
         'M',

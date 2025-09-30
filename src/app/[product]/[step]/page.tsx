@@ -51,6 +51,7 @@ export default function ConfiguratorStepPage() {
 
   const [hoodieFarben, setHoodieFarben] = useState<{ name: string; url: string }[]>([])
   const [hoodieKidsFarben, setHoodieKidsFarben] = useState<{ name: string; url: string }[]>([])
+  const [pulloverFarben, setPulloverFarben] = useState<ColorType[]>([]);
 
   const [showInfo, setShowInfo] = useState(false)
   const [druckfarben, setDruckfarben] = useState<{ name: string; code: string }[]>([])
@@ -155,31 +156,44 @@ export default function ConfiguratorStepPage() {
   
     const fetchColors = async () => {
       if (product.includes('hoodie-fuer-kids')) {
-        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-kids-farbens?populate=*')
-        const data = await res.json()
+        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-kids-farbens?populate=*');
+        const data = await res.json();
         if (!data || !Array.isArray(data.data)) {
-          console.error('❌ Fehler beim Laden der Farben:', data)
-          return
+          console.error('❌ Fehler beim Laden der Farben (Kids):', data);
+          return;
         }
         const farben = data.data.map((item: any) => ({
           name: item.Farbe,
           url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
-        }))
-        setHoodieKidsFarben(farben)
+        }));
+        setHoodieKidsFarben(farben);
       } else if (product.includes('hoodie')) {
-        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-farbens?populate=*')
-        const data = await res.json()
+        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-hoodie-farbens?populate=*');
+        const data = await res.json();
         if (!data || !Array.isArray(data.data)) {
-          console.error('❌ Fehler beim Laden der Farben:', data)
-          return
+          console.error('❌ Fehler beim Laden der Farben (Hoodie):', data);
+          return;
         }
         const farben = data.data.map((item: any) => ({
           name: item.Farbe,
           url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
-        }))
-        setHoodieFarben(farben)
+        }));
+        setHoodieFarben(farben);
+      } else if (product.includes('pullover')) {
+        const res = await fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-pullover-farbens?populate=*');
+        const data = await res.json();
+        if (!data || !Array.isArray(data.data)) {
+          console.error('❌ Fehler beim Laden der Farben (Pullover):', data);
+          return;
+        }
+        const farben = data.data.map((item: any) => ({
+          name: item.Farbe,
+          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+        }));
+        setPulloverFarben(farben);
       }
-    }
+    };
+
   
     fetchColors()
   }, [step])
@@ -480,9 +494,14 @@ export default function ConfiguratorStepPage() {
               : 'Farbe wählen'}
           </h1>
 
-          {product.includes('hoodie') ? (
+          {product.includes('hoodie') || product.includes('pullover') ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-              {(product.includes('hoodie-fuer-kids') ? hoodieKidsFarben : hoodieFarben).map((farbe) => {
+                  {(product.includes('hoodie-fuer-kids')
+                    ? hoodieKidsFarben
+                    : product.includes('pullover')
+                    ? pulloverFarben
+                    : hoodieFarben
+                  ).map((farbe) => {
                 const selected = selectedColor === farbe.name
                 return (
                   <div
