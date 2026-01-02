@@ -139,17 +139,27 @@ export default function ConfiguratorStepPage() {
 
   useEffect(() => {
     if (step === 'druckfarbe') {
-      fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-druckfarben')
+      let apiUrl = 'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-druckfarben';
+      
+      if (product === 'mein-persoenlicher-rucksack') {
+        apiUrl += '?filters[Rucksack][$eq]=true';
+      }
+
+      fetch(apiUrl)
         .then((res) => res.json())
         .then((data) => {
+          if (!data.data) return;
+          
           const farben = data.data.map((item: any) => ({
             name: item.Farbe,
             code: item.Code,
+            rucksack: item.Rucksack
           }))
           setDruckfarben(farben)
         })
+        .catch((err) => console.error("Fehler beim Laden der Druckfarben:", err));
     }
-  }, [step])
+  }, [step, product]);
 
   useEffect(() => {
     if (step !== 'color') return;
