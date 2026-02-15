@@ -1251,7 +1251,7 @@ export default function ConfiguratorStepPage() {
           </span>
         </div>
 
-        <div className="rounded-2xl border border-[#e4e7eb] bg-white p-4 sm:p-6 shadow-sm">
+        <div className="rounded-2xl border border-[#e4e7eb] bg-white p-3 sm:p-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[#1c2228]">
             {hasMultiStepSummaryColumns ? (
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">

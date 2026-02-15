@@ -36,8 +36,8 @@ interface Props {
         )}
   
         {/* Inhalt */}
-        <div className="flex-1 flex justify-center px-4 mt-4 mb-10">
-          <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-10">
+        <div className="flex-1 flex justify-center px-2 sm:px-4 mt-4 mb-10">
+          <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-4 sm:p-6 lg:p-10">
             {children}
           </div>
         </div>
