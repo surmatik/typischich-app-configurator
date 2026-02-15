@@ -1521,7 +1521,6 @@ export default function ConfiguratorStepPage() {
                           style={{
                             background: summaryPrintFill,
                             WebkitMaskImage: `url(${landschaftPreviewUrl})`,
-                            WebkitMaskMode: 'luminance',
                             WebkitMaskRepeat: 'no-repeat',
                             WebkitMaskPosition: 'center',
                             WebkitMaskSize: 'contain',
