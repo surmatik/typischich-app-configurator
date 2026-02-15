@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { getNextStep, getProductConfigBySlug } from '@/lib/getProductConfig'
-import { useConfiguratorStore } from '@/state/configuratorStore'
+import { type Gender, useConfiguratorStore } from '@/state/configuratorStore'
 import StepWrapper from '@/components/StepWrapper'
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
@@ -40,6 +40,35 @@ export default function ConfiguratorStepPage() {
   const storeLandschaft = useConfiguratorStore((s) => s.landschaft)
   const storeNameType = useConfiguratorStore((s) => s.nameType)
   const storeCustomName = useConfiguratorStore((s) => s.customName)
+  const stepSelections = useConfiguratorStore((s) => s.stepSelections)
+  const setStepSelections = useConfiguratorStore((s) => s.setStepSelections)
+
+  const multiStepSelectionConfig = config.multiStepSelection
+  const multiSelectionCount = multiStepSelectionConfig?.count ?? 1
+
+  const isMultiStepSelection = (stepName: string) =>
+    Boolean(
+      multiStepSelectionConfig &&
+        multiSelectionCount > 1 &&
+        multiStepSelectionConfig.steps.includes(stepName)
+    )
+
+  const getSelectionLabel = (index: number) =>
+    multiStepSelectionConfig?.labels?.[index] || `Shirt ${index + 1}`
+
+  const getStepSelections = (stepName: string): string[] => {
+    const values = stepSelections[stepName] || []
+    if (!isMultiStepSelection(stepName)) return values
+
+    return Array.from({ length: multiSelectionCount }, (_, index) => values[index] || '')
+  }
+
+  const updateStepSelectionAt = (stepName: string, index: number, value: string) => {
+    const currentValues = getStepSelections(stepName)
+    const nextValues = [...currentValues]
+    nextValues[index] = value
+    setStepSelections(stepName, nextValues)
+  }
 
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
@@ -60,6 +89,7 @@ export default function ConfiguratorStepPage() {
   const [search, setSearch] = useState('')
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [summaryPreviewIndex, setSummaryPreviewIndex] = useState(0)
 
   const prevHobbysRef = useRef<string[]>([])
 
@@ -73,6 +103,16 @@ export default function ConfiguratorStepPage() {
   useEffect(() => {
     setHasMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (summaryPreviewIndex >= multiSelectionCount) {
+      setSummaryPreviewIndex(0)
+    }
+  }, [summaryPreviewIndex, multiSelectionCount])
+
+  useEffect(() => {
+    setSummaryPreviewIndex(0)
+  }, [product])
 
   // Size
   useEffect(() => {
@@ -138,7 +178,7 @@ export default function ConfiguratorStepPage() {
   }, [storeSize, storeColor, storeDruckfarbe, storeHobbys, storeLandschaft, storeNameType, storeCustomName])
 
   useEffect(() => {
-    if (step === 'druckfarbe') {
+    if (step === 'druckfarbe' || step === 'summary') {
       let apiUrl = 'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-druckfarben';
       
       if (product === 'mein-persoenlicher-rucksack') {
@@ -162,7 +202,7 @@ export default function ConfiguratorStepPage() {
   }, [step, product]);
 
   useEffect(() => {
-    if (step !== 'color') return;
+    if (step !== 'color' && step !== 'summary') return;
   
     const fetchColors = async () => {
       if (product.includes('hoodie-fuer-kids')) {
@@ -209,7 +249,7 @@ export default function ConfiguratorStepPage() {
   }, [step])
 
   useEffect(() => {
-    if (step !== 'hobbys') return
+    if (step !== 'hobbys' && step !== 'summary') return
   
     const fetchAllHobbys = async () => {
       let allHobbys: { name: string; thumbnail: string }[] = []
@@ -242,7 +282,7 @@ export default function ConfiguratorStepPage() {
   }, [step])
 
   useEffect(() => {
-    if (step === 'landschaft') {
+    if (step === 'landschaft' || step === 'summary') {
       fetch('https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-landschaftens?populate=*')
         .then((res) => res.json())
         .then((data) => {
@@ -267,21 +307,220 @@ export default function ConfiguratorStepPage() {
   if (!config.flow.includes(step)) return <p className="p-8">❌ Ungültiger Schritt.</p>
 
   const next = getNextStep(product, step)
+  const genderSelections = getStepSelections('gender')
+  const sizeSelections = getStepSelections('size')
+  const colorSelections = getStepSelections('color')
+  const druckfarbeSelections = getStepSelections('druckfarbe')
+  const isTshirtProduct =
+    product.includes('tshirt') || product.includes('t-shirt') || product.includes('t-shirts')
+  const hasMultiStepSummaryColumns = ['gender', 'size', 'color', 'druckfarbe'].some(
+    (stepName) => config.flow.includes(stepName) && isMultiStepSelection(stepName)
+  )
+  const activeSummaryPreviewIndex = Math.min(summaryPreviewIndex, Math.max(multiSelectionCount - 1, 0))
+  const getSummaryPreviewLabel = (index: number) =>
+    isTshirtProduct ? `T-Shirt ${index + 1}` : getSelectionLabel(index)
+  const landschaftValue = storeLandschaft?.[0] || ''
+  const landschaftPreviewUrl = landschaftValue ? getLandschaftPreviewUrl(landschaftValue) : null
+  const textValue = storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || '')
+
+  const hoodieOrPulloverColors = product.includes('hoodie-fuer-kids')
+    ? hoodieKidsFarben
+    : product.includes('pullover')
+    ? pulloverFarben
+    : hoodieFarben
+
+  const goToNextStep = () => {
+    if (!next) return
+    setDirection(1)
+    router.push(`/${product}/${next}`)
+  }
+
+  const isSizeValueValid = (value: string) =>
+    Boolean(value && value !== 'Wähle eine Grösse aus')
+
+  const isColorValueValid = (value: string) =>
+    Boolean(value && value !== 'Wähle deine Farbe aus')
+
+  const isSharedStepSelection = (stepName: string) =>
+    Boolean(
+      multiStepSelectionConfig &&
+        multiSelectionCount > 1 &&
+        config.flow.includes(stepName) &&
+        !isMultiStepSelection(stepName)
+    )
+
+  const getSharedSelectionHintText = (stepName: string) => {
+    if (!multiStepSelectionConfig || multiSelectionCount <= 1) return ''
+
+    const sharedStepSubjects: Record<string, string> = {
+      hobbys: 'Die gewählten Hobbys',
+      landschaft: 'Die gewählte Landschaft',
+      text: 'Der gewählte Text',
+    }
+    const sharedStepVerbs: Record<string, string> = {
+      hobbys: 'gelten',
+      landschaft: 'gilt',
+      text: 'gilt',
+    }
+
+    const subject = sharedStepSubjects[stepName] || 'Diese Auswahl'
+    const verb = sharedStepVerbs[stepName] || 'gilt'
+
+    if (multiSelectionCount === 2) {
+      return `${subject} ${verb} für beide T-Shirts.`
+    }
+
+    return `${subject} ${verb} für alle T-Shirts.`
+  }
+
+  const isGenderValue = (value: string): value is Gender =>
+    value === 'Frau' || value === 'Mann' || value === 'Kind'
+
+  function normalizeValue(value: string) {
+    return value.trim().toLowerCase()
+  }
+
+  const flatColorMap: Record<string, string> = {
+    schwarz: '#111111',
+    weiss: '#ffffff',
+    grau: '#9ca3af',
+    dunkelgrau: '#4b5563',
+    hellgrau: '#d1d5db',
+    rot: '#e11d48',
+    'bordeaux rot': '#7f1d1d',
+    orange: '#f97316',
+    gelb: '#facc15',
+    blau: '#2563eb',
+    dunkelblau: '#1e3a8a',
+    hellblau: '#7dd3fc',
+    eisblau: '#bfdbfe',
+    violett: '#7c3aed',
+    pink: '#ec4899',
+    'soft rosa': '#f9a8d4',
+    gruen: '#16a34a',
+    grün: '#16a34a',
+    hellgruen: '#84cc16',
+    hellgrün: '#84cc16',
+    grüngelb: '#a3e635',
+    grungelb: '#a3e635',
+    eisgruen: '#bbf7d0',
+    eisgrün: '#bbf7d0',
+    waldgruen: '#166534',
+    waldgrün: '#166534',
+    olivegruen: '#4d7c0f',
+    olivegrün: '#4d7c0f',
+    schokoladenbraun: '#7c2d12',
+  }
+
+  const getFlatColorCode = (colorName: string) => {
+    const key = normalizeValue(colorName)
+    return flatColorMap[key] || null
+  }
+
+  const getColorPreviewImageUrl = (colorName: string) => {
+    const match = hoodieOrPulloverColors.find(
+      (farbe) => normalizeValue(farbe.name) === normalizeValue(colorName)
+    )
+    if (!match?.url) return null
+    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.url}`
+  }
+
+  const getDruckfarbeCode = (farbeName: string) => {
+    const match = druckfarben.find(
+      (farbe) => normalizeValue(farbe.name) === normalizeValue(farbeName)
+    )
+    return match?.code || null
+  }
+
+  const getHobbyThumbnailUrl = (hobbyName: string) => {
+    const match = hobbyList.find(
+      (hobby) => normalizeValue(hobby.name) === normalizeValue(hobbyName)
+    )
+    if (!match?.thumbnail) return null
+    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.thumbnail}`
+  }
+
+  function getLandschaftPreviewUrl(landschaftName: string) {
+    const match = landschaften.find(
+      (landschaftItem) => normalizeValue(landschaftItem.name) === normalizeValue(landschaftName)
+    )
+    if (!match?.url) return null
+    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.url}`
+  }
+
+  const getSummaryPrintFill = () => {
+    const selectedName = isMultiStepSelection('druckfarbe')
+      ? druckfarbeSelections[activeSummaryPreviewIndex] || ''
+      : storeDruckfarbe || ''
+
+    return (selectedName ? getDruckfarbeCode(selectedName) : null) || '#ffffff'
+  }
+
+  const getSummaryMotifBackground = () => {
+    const selectedName = isMultiStepSelection('color')
+      ? colorSelections[activeSummaryPreviewIndex] || ''
+      : storeColor || ''
+
+    return (selectedName ? getFlatColorCode(selectedName) : null) || '#111111'
+  }
+
+  const getSummaryMotifTextColor = () => {
+    const backgroundCode = getSummaryMotifBackground()
+    if (!backgroundCode.startsWith('#')) return '#ffffff'
+
+    const normalized = backgroundCode.replace('#', '')
+    const longHex =
+      normalized.length === 3
+        ? normalized
+            .split('')
+            .map((ch) => `${ch}${ch}`)
+            .join('')
+        : normalized
+
+    const r = parseInt(longHex.slice(0, 2), 16)
+    const g = parseInt(longHex.slice(2, 4), 16)
+    const b = parseInt(longHex.slice(4, 6), 16)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+    return luminance > 0.62 ? '#1c2228' : '#ffffff'
+  }
+
+  const summaryPrintFill = getSummaryPrintFill()
+  const summaryMotifBackground = getSummaryMotifBackground()
+  const summaryMotifTextColor = getSummaryMotifTextColor()
+
+  const addSingleOrMultiProperty = (
+    properties: Record<string, string>,
+    stepName: string,
+    propertyName: string,
+    singleValue: string
+  ) => {
+    if (isMultiStepSelection(stepName)) {
+      const values = getStepSelections(stepName)
+      properties[propertyName] = values.filter(Boolean).join(' / ')
+
+      values.forEach((value, index) => {
+        properties[`${propertyName} (${getSelectionLabel(index)})`] = value || ''
+      })
+      return
+    }
+
+    properties[propertyName] = singleValue
+  }
 
   const handleAddToShopifyCart = () => {
     const params = new URLSearchParams()
     params.set('id', config.id) // z. B. 51964063285577
   
-    const properties: Record<string, string> = {
-      Geschlecht: gender || '',
-      Grösse: storeSize || '',
-      Farbe: storeColor || '',
-      Druckfarbe: storeDruckfarbe || '',
-      Hobbys: storeHobbys?.join(', ') || '',
-      Landschaft: storeLandschaft[0] || '',
-      Text: storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || ''),
-      _KonfigID: `${Date.now()}-${Math.floor(Math.random() * 100000)}`
-    }
+    const properties: Record<string, string> = {}
+    addSingleOrMultiProperty(properties, 'gender', 'Geschlecht', gender || '')
+    addSingleOrMultiProperty(properties, 'size', 'Grösse', storeSize || '')
+    addSingleOrMultiProperty(properties, 'color', 'Farbe', storeColor || '')
+    addSingleOrMultiProperty(properties, 'druckfarbe', 'Druckfarbe', storeDruckfarbe || '')
+    properties.Hobbys = storeHobbys?.join(', ') || ''
+    properties.Landschaft = storeLandschaft[0] || ''
+    properties.Text = storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || '')
+    properties._KonfigID = `${Date.now()}-${Math.floor(Math.random() * 100000)}`
   
     Object.entries(properties).forEach(([key, value]) => {
       params.set(`properties[${key}]`, value)
@@ -313,27 +552,73 @@ export default function ConfiguratorStepPage() {
       {/* Step: Gender */}
       {step === 'gender' && config.genderOptions && (
         <>
-          <h1 className="text-2xl font-bold mb-6 text-[#262626]">Ich bin ...</h1>
-          <div className="space-y-4">
-            {config.genderOptions.map((g) => {
-              const artikel = g.toLowerCase() === 'mann' || g.toLowerCase() === 'kind' ? 'ein' : 'eine'
-              return (
-                <button
-                  key={g}
-                  onClick={() => {
-                    setGender(g as any)
-                    if (next) {
-                      setDirection(1)
-                      router.push(`/${product}/${next}`)
-                    }
-                  }}
-                  className="w-full py-3 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-300 text-[#262626]"
-                >
-                  ... {artikel} {g}
-                </button>
-              )
-            })}
-          </div>
+          <h1 className="text-2xl font-bold mb-6 text-[#262626]">
+            {isMultiStepSelection('gender') ? 'Wir sind ...' : 'Ich bin ...'}
+          </h1>
+
+          {isMultiStepSelection('gender') ? (
+            <div className="space-y-6">
+              {genderSelections.map((selectedValue, index) => (
+                <div key={index} className="space-y-3">
+                  <p className="text-sm font-semibold text-[#262626]">{getSelectionLabel(index)}</p>
+                  <div className="space-y-3">
+                    {config.genderOptions?.map((g) => {
+                      const artikel = g.toLowerCase() === 'mann' || g.toLowerCase() === 'kind' ? 'ein' : 'eine'
+                      const selected = selectedValue === g
+
+                      return (
+                        <button
+                          key={`${g}-${index}`}
+                          onClick={() => updateStepSelectionAt('gender', index, g)}
+                          className={`w-full py-3 rounded-xl border text-[#262626] transition ${
+                            selected
+                              ? 'bg-black text-white border-black'
+                              : 'bg-gray-100 hover:bg-gray-200 border-gray-300'
+                          }`}
+                        >
+                          ... {artikel} {g}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <button
+                disabled={genderSelections.some((value) => !value)}
+                onClick={() => {
+                  setStepSelections('gender', genderSelections)
+                  if (genderSelections[0] && isGenderValue(genderSelections[0])) {
+                    setGender(genderSelections[0])
+                  }
+                  goToNextStep()
+                }}
+                className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
+              >
+                Weiter
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {config.genderOptions.map((g) => {
+                const artikel = g.toLowerCase() === 'mann' || g.toLowerCase() === 'kind' ? 'ein' : 'eine'
+                return (
+                  <button
+                    key={g}
+                    onClick={() => {
+                      if (isGenderValue(g)) {
+                        setGender(g)
+                      }
+                      goToNextStep()
+                    }}
+                    className="w-full py-3 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-300 text-[#262626]"
+                  >
+                    ... {artikel} {g}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
 
@@ -343,17 +628,38 @@ export default function ConfiguratorStepPage() {
         <>
           <h1 className="text-2xl font-bold mb-6 text-[#262626]">Meine Grösse</h1>
 
-          <select
-            value={selectedSize}
-            onChange={(e) => setSelectedSize(e.target.value)}
-            className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
-          >
-            {config.sizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+          {isMultiStepSelection('size') ? (
+            <div className="space-y-4 mb-4">
+              {sizeSelections.map((selectedValue, index) => (
+                <div key={index}>
+                  <p className="text-sm font-semibold text-[#262626] mb-2">{getSelectionLabel(index)}</p>
+                  <select
+                    value={selectedValue}
+                    onChange={(e) => updateStepSelectionAt('size', index, e.target.value)}
+                    className="w-full p-3 border rounded-xl bg-white text-[#262626]"
+                  >
+                    {config.sizes?.map((size) => (
+                      <option key={`${size}-${index}`} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <select
+              value={selectedSize}
+              onChange={(e) => setSelectedSize(e.target.value)}
+              className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
+            >
+              {config.sizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          )}
 
           <div className="bg-gray-100 p-4 rounded-xl mb-4">
             <button
@@ -474,13 +780,23 @@ export default function ConfiguratorStepPage() {
           </div>
 
           <button
-            disabled={!selectedSize || selectedSize === 'Wähle eine Grösse aus'}
+            disabled={
+              isMultiStepSelection('size')
+                ? sizeSelections.some((value) => !isSizeValueValid(value))
+                : !selectedSize || selectedSize === 'Wähle eine Grösse aus'
+            }
             onClick={() => {
-              setSize(selectedSize)
-              if (next) {
-                setDirection(1)
-                router.push(`/${product}/${next}`)
+              if (isMultiStepSelection('size')) {
+                setStepSelections('size', sizeSelections)
+                if (sizeSelections[0]) {
+                  setSize(sizeSelections[0])
+                }
+                goToNextStep()
+                return
               }
+
+              setSize(selectedSize)
+              goToNextStep()
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
           >
@@ -505,63 +821,123 @@ export default function ConfiguratorStepPage() {
           </h1>
 
           {product.includes('hoodie') || product.includes('pullover') ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-                  {(product.includes('hoodie-fuer-kids')
-                    ? hoodieKidsFarben
-                    : product.includes('pullover')
-                    ? pulloverFarben
-                    : hoodieFarben
-                  ).map((farbe) => {
-                const selected = selectedColor === farbe.name
-                return (
-                  <div
-                    key={farbe.name}
-                    onClick={() => setSelectedColor(farbe.name)}
-                    className={`group cursor-pointer border rounded-xl p-2 flex flex-col items-center justify-between h-44 transition ${
-                      selected ? 'scale-110 border-black bg-gray-100' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
-                      {farbe.url && (
-                        <Image
-                          src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
-                          alt={farbe.name}
-                          width={80}
-                          height={80}
-                          className="object-contain transition-transform duration-300 group-hover:scale-110"
-                        />
-                      )}
+            isMultiStepSelection('color') ? (
+              <div className="space-y-6 mb-6">
+                {colorSelections.map((selectedValue, index) => (
+                  <div key={index}>
+                    <p className="text-sm font-semibold text-[#262626] mb-3">{getSelectionLabel(index)}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {hoodieOrPulloverColors.map((farbe) => {
+                        const selected = selectedValue === farbe.name
+                        return (
+                          <div
+                            key={`${farbe.name}-${index}`}
+                            onClick={() => updateStepSelectionAt('color', index, farbe.name)}
+                            className={`group cursor-pointer border rounded-xl p-2 flex flex-col items-center justify-between h-44 transition ${
+                              selected ? 'scale-110 border-black bg-gray-100' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
+                              {farbe.url && (
+                                <Image
+                                  src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
+                                  alt={farbe.name}
+                                  width={80}
+                                  height={80}
+                                  className="object-contain transition-transform duration-300 group-hover:scale-110"
+                                />
+                              )}
+                            </div>
+                            <p className="text-center text-sm text-[#262626]">{farbe.name}</p>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <p className="text-center text-sm text-[#262626]">{farbe.name}</p>
                   </div>
-                )
-              })}
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                {hoodieOrPulloverColors.map((farbe) => {
+                  const selected = selectedColor === farbe.name
+                  return (
+                    <div
+                      key={farbe.name}
+                      onClick={() => setSelectedColor(farbe.name)}
+                      className={`group cursor-pointer border rounded-xl p-2 flex flex-col items-center justify-between h-44 transition ${
+                        selected ? 'scale-110 border-black bg-gray-100' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
+                        {farbe.url && (
+                          <Image
+                            src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
+                            alt={farbe.name}
+                            width={80}
+                            height={80}
+                            className="object-contain transition-transform duration-300 group-hover:scale-110"
+                          />
+                        )}
+                      </div>
+                      <p className="text-center text-sm text-[#262626]">{farbe.name}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          ) : isMultiStepSelection('color') ? (
+            <div className="space-y-4 mb-4">
+              {colorSelections.map((selectedValue, index) => (
+                <div key={index}>
+                  <p className="text-sm font-semibold text-[#262626] mb-2">{getSelectionLabel(index)}</p>
+                  <select
+                    value={selectedValue}
+                    onChange={(e) => updateStepSelectionAt('color', index, e.target.value)}
+                    className="w-full p-3 border rounded-xl bg-white text-[#262626]"
+                  >
+                    <option>Wähle deine Farbe aus</option>
+                    {config.colors?.map((color) => (
+                      <option key={`${color}-${index}`} value={color}>
+                        {color}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
           ) : (
-            <>
-              <select
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
-              >
-                <option>Wähle deine Farbe aus</option>
-                {config.colors?.map((color) => (
-                  <option key={color} value={color}>
-                    {color}
-                  </option>
-                ))}
-              </select>
-            </>
+            <select
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+              className="w-full p-3 border rounded-xl mb-4 bg-white text-[#262626]"
+            >
+              <option>Wähle deine Farbe aus</option>
+              {config.colors?.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
           )}
 
           <button
-            disabled={!selectedColor || selectedColor === 'Wähle deine Farbe aus'}
+            disabled={
+              isMultiStepSelection('color')
+                ? colorSelections.some((value) => !isColorValueValid(value))
+                : !selectedColor || selectedColor === 'Wähle deine Farbe aus'
+            }
             onClick={() => {
-              setColor(selectedColor)
-              if (next) {
-                setDirection(1)
-                router.push(`/${product}/${next}`)
+              if (isMultiStepSelection('color')) {
+                setStepSelections('color', colorSelections)
+                if (colorSelections[0]) {
+                  setColor(colorSelections[0])
+                }
+                goToNextStep()
+                return
               }
+
+              setColor(selectedColor)
+              goToNextStep()
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
           >
@@ -576,35 +952,75 @@ export default function ConfiguratorStepPage() {
         <>
           <h1 className="text-2xl font-bold mb-6 text-[#262626]">Wähle deine Druckfarbe</h1>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-6">
-            {druckfarben.map((farbe) => {
-              const selected = selectedDruckfarbe === farbe.name
-              return (
-                <div
-                  key={farbe.name}
-                  onClick={() => setSelectedDruckfarbe(farbe.name)}
-                  className={`cursor-pointer rounded-xl flex flex-col items-center justify-center border p-2 transition ${
-                    selected ? 'border-black ring-2 ring-black scale-105' : 'hover:scale-105'
-                  }`}
-                >
-                  <div
-                    className="w-12 h-12 rounded-full mb-2 border border-gray-300"
-                    style={{ backgroundColor: farbe.code || '#fff' }}
-                  />
-                  <p className="text-sm text-[#262626]">{farbe.name}</p>
+          {isMultiStepSelection('druckfarbe') ? (
+            <div className="space-y-6 mb-6">
+              {druckfarbeSelections.map((selectedValue, index) => (
+                <div key={index}>
+                  <p className="text-sm font-semibold text-[#262626] mb-3">{getSelectionLabel(index)}</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                    {druckfarben.map((farbe) => {
+                      const selected = selectedValue === farbe.name
+                      return (
+                        <div
+                          key={`${farbe.name}-${index}`}
+                          onClick={() => updateStepSelectionAt('druckfarbe', index, farbe.name)}
+                          className={`cursor-pointer rounded-xl flex flex-col items-center justify-center border p-2 transition ${
+                            selected ? 'border-black ring-2 ring-black scale-105' : 'hover:scale-105'
+                          }`}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-full mb-2 border border-gray-300"
+                            style={{ backgroundColor: farbe.code || '#fff' }}
+                          />
+                          <p className="text-sm text-[#262626]">{farbe.name}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-6">
+              {druckfarben.map((farbe) => {
+                const selected = selectedDruckfarbe === farbe.name
+                return (
+                  <div
+                    key={farbe.name}
+                    onClick={() => setSelectedDruckfarbe(farbe.name)}
+                    className={`cursor-pointer rounded-xl flex flex-col items-center justify-center border p-2 transition ${
+                      selected ? 'border-black ring-2 ring-black scale-105' : 'hover:scale-105'
+                    }`}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full mb-2 border border-gray-300"
+                      style={{ backgroundColor: farbe.code || '#fff' }}
+                    />
+                    <p className="text-sm text-[#262626]">{farbe.name}</p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <button
-            disabled={!selectedDruckfarbe}
+            disabled={
+              isMultiStepSelection('druckfarbe')
+                ? druckfarbeSelections.some((value) => !value)
+                : !selectedDruckfarbe
+            }
             onClick={() => {
-              setDruckfarbe(selectedDruckfarbe)
-              if (next) {
-                setDirection(1)
-                router.push(`/${product}/${next}`)
+              if (isMultiStepSelection('druckfarbe')) {
+                setStepSelections('druckfarbe', druckfarbeSelections)
+                if (druckfarbeSelections[0]) {
+                  setDruckfarbe(druckfarbeSelections[0])
+                }
+                goToNextStep()
+                return
               }
+
+              setDruckfarbe(selectedDruckfarbe)
+              goToNextStep()
             }}
             className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-900 disabled:opacity-50"
           >
@@ -620,6 +1036,11 @@ export default function ConfiguratorStepPage() {
         <h1 className="text-2xl font-bold mb-6 text-[#262626]">
           {config.maxHobbys === 1 ? 'Wähle ein Hobby' : `Wähle bis zu ${config.maxHobbys ?? 3} Hobbys`}
         </h1>
+        {isSharedStepSelection('hobbys') && (
+          <p className="mb-4 rounded-xl bg-gray-100 p-3 text-sm text-[#262626]">
+            {getSharedSelectionHintText('hobbys')}
+          </p>
+        )}
 
         <input
         type="text"
@@ -685,6 +1106,11 @@ export default function ConfiguratorStepPage() {
     {step === 'landschaft' && (
     <>
         <h1 className="text-2xl font-bold mb-6 text-[#262626]">Landschaft</h1>
+        {isSharedStepSelection('landschaft') && (
+          <p className="mb-4 rounded-xl bg-gray-100 p-3 text-sm text-[#262626]">
+            {getSharedSelectionHintText('landschaft')}
+          </p>
+        )}
 
         <div className="space-y-4">
         {landschaften.map((l) => {
@@ -732,6 +1158,11 @@ export default function ConfiguratorStepPage() {
 
     {step === 'text' && (
       <>
+        {isSharedStepSelection('text') && (
+          <p className="mb-4 rounded-xl bg-gray-100 p-3 text-sm text-[#262626]">
+            {getSharedSelectionHintText('text')}
+          </p>
+        )}
         {product === 'mein-persoenlicher-schluesselanhaenger' ? (
           <>
             <h1 className="text-2xl font-bold mb-6 text-[#262626]">Name oder Bezeichnung</h1>
@@ -807,36 +1238,321 @@ export default function ConfiguratorStepPage() {
 
     {/* Step: Zusammenfassung */}
     {step === 'summary' && (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6 text-[#262626]">Deine Auswahl</h1>
-        <div className="p-8">
-          <ul className="space-y-2 text-[#262626]">
-            {config.flow.includes('gender') && (
-              <li><strong>Geschlecht:</strong> {gender ?? '–'}</li>
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1c2228]">Deine Auswahl</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Fast fertig. Prüfe kurz deine Konfiguration.
+            </p>
+          </div>
+          <span className="rounded-full border border-[#d9e0e7] bg-[#eef3f8] px-3 py-1 text-xs font-semibold text-[#1c2228]">
+            Fast fertig
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-[#e4e7eb] bg-white p-4 sm:p-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[#1c2228]">
+            {hasMultiStepSummaryColumns ? (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Array.from({ length: multiSelectionCount }, (_, index) => {
+                  const genderValue = isMultiStepSelection('gender')
+                    ? genderSelections[index] || ''
+                    : gender || ''
+                  const sizeValue = isMultiStepSelection('size') ? sizeSelections[index] || '' : storeSize || ''
+                  const colorValue = isMultiStepSelection('color')
+                    ? colorSelections[index] || ''
+                    : storeColor || ''
+                  const druckfarbeValue = isMultiStepSelection('druckfarbe')
+                    ? druckfarbeSelections[index] || ''
+                    : storeDruckfarbe || ''
+                  const colorImageUrl = colorValue ? getColorPreviewImageUrl(colorValue) : null
+                  const flatColorCode = colorValue ? getFlatColorCode(colorValue) : null
+                  const druckfarbeCode = druckfarbeValue ? getDruckfarbeCode(druckfarbeValue) : null
+
+                  return (
+                    <div
+                      key={`summary-multi-column-${index}`}
+                      className="rounded-2xl border border-[#dfe5ec] bg-gradient-to-b from-white to-[#f8fafc] p-4"
+                    >
+                      <h3 className="text-base font-semibold text-[#1c2228]">
+                        {isTshirtProduct ? `T-Shirt ${index + 1}` : getSelectionLabel(index)}
+                      </h3>
+
+                      <div className="mt-3 space-y-2">
+                        {config.flow.includes('gender') && (
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <span className="text-sm text-gray-500">Geschlecht</span>
+                            <span className="font-semibold text-[#1c2228]">{genderValue || '–'}</span>
+                          </div>
+                        )}
+
+                        {config.flow.includes('size') && (
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <span className="text-sm text-gray-500">Grösse</span>
+                            <span className="font-semibold text-[#1c2228]">{sizeValue || '–'}</span>
+                          </div>
+                        )}
+
+                        {config.flow.includes('color') && (
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <span className="text-sm text-gray-500">Farbe</span>
+                            <div className="flex items-center gap-2">
+                              {colorValue ? (
+                                <>
+                                  {colorImageUrl ? (
+                                    <Image
+                                      src={colorImageUrl}
+                                      alt={colorValue}
+                                      width={28}
+                                      height={28}
+                                      className="w-7 h-7 rounded-md object-contain border border-gray-200 bg-white"
+                                    />
+                                  ) : flatColorCode ? (
+                                    <span
+                                      className="w-5 h-5 rounded-full border border-black/10 ring-2 ring-white shadow-sm"
+                                      style={{ backgroundColor: flatColorCode }}
+                                    />
+                                  ) : null}
+                                  <span className="font-semibold text-[#1c2228]">{colorValue}</span>
+                                </>
+                              ) : (
+                                <span className="font-semibold text-[#1c2228]">–</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {config.flow.includes('druckfarbe') && (
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <span className="text-sm text-gray-500">Druckfarbe</span>
+                            <div className="flex items-center gap-2">
+                              {druckfarbeValue ? (
+                                <>
+                                  {druckfarbeCode && (
+                                    <span
+                                      className="w-5 h-5 rounded-full border border-black/10 ring-2 ring-white shadow-sm"
+                                      style={{ backgroundColor: druckfarbeCode }}
+                                    />
+                                  )}
+                                  <span className="font-semibold text-[#1c2228]">{druckfarbeValue}</span>
+                                </>
+                              ) : (
+                                <span className="font-semibold text-[#1c2228]">–</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <>
+                {config.flow.includes('gender') && (
+                  <div className="rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
+                    <p className="text-sm font-medium text-gray-500">Geschlecht</p>
+                    <p className="mt-1 text-base font-semibold">{gender ?? '–'}</p>
+                  </div>
+                )}
+
+                {config.flow.includes('size') && (
+                  <div className="rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
+                    <p className="text-sm font-medium text-gray-500">Grösse</p>
+                    <p className="mt-1 text-base font-semibold">{storeSize ?? '–'}</p>
+                  </div>
+                )}
+
+                {config.flow.includes('color') && (
+                  <div className="rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
+                    <p className="text-sm font-medium text-gray-500">Farbe</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {storeColor ? (
+                        <>
+                          {getColorPreviewImageUrl(storeColor) ? (
+                            <Image
+                              src={getColorPreviewImageUrl(storeColor) as string}
+                              alt={storeColor}
+                              width={30}
+                              height={30}
+                              className="w-8 h-8 rounded-md object-contain border border-gray-200 bg-white"
+                            />
+                          ) : getFlatColorCode(storeColor) ? (
+                            <span
+                              className="w-5 h-5 rounded-full border border-black/10 ring-2 ring-white shadow-sm"
+                              style={{ backgroundColor: getFlatColorCode(storeColor) as string }}
+                            />
+                          ) : null}
+                          <span className="text-base font-semibold">{storeColor}</span>
+                        </>
+                      ) : (
+                        <span className="text-base font-semibold">–</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {config.flow.includes('druckfarbe') && (
+                  <div className="rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
+                    <p className="text-sm font-medium text-gray-500">Druckfarbe</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {storeDruckfarbe ? (
+                        <>
+                          {getDruckfarbeCode(storeDruckfarbe) && (
+                            <span
+                              className="w-5 h-5 rounded-full border border-black/10 ring-2 ring-white shadow-sm"
+                              style={{ backgroundColor: getDruckfarbeCode(storeDruckfarbe) as string }}
+                            />
+                          )}
+                          <span className="text-base font-semibold">{storeDruckfarbe}</span>
+                        </>
+                      ) : (
+                        <span className="text-base font-semibold">–</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-            {config.flow.includes('size') && (
-              <li><strong>Grösse:</strong> {storeSize ?? '–'}</li>
-            )}
-            {config.flow.includes('color') && (
-              <li><strong>Farbe:</strong> {storeColor ?? '–'}</li>
-            )}
-            {config.flow.includes('druckfarbe') && (
-              <li><strong>Druckfarbe:</strong> {storeDruckfarbe ?? '–'}</li>
-            )}
-            {config.flow.includes('hobbys') && (
-              <li><strong>Hobbys:</strong> {storeHobbys?.length ? storeHobbys.join(', ') : '–'}</li>
-            )}
-            {config.flow.includes('landschaft') && (
-              <li><strong>Landschaft:</strong> {storeLandschaft ?? '–'}</li>
-            )}
-            {config.flow.includes('text') && (
-              <li><strong>Text:</strong> {storeNameType === 'Name' ? (storeCustomName || '–') : (storeNameType ?? '–')}</li>
-            )}
-          </ul>
+
+          </div>
+
+          {(config.flow.includes('hobbys') || config.flow.includes('landschaft')) && (
+            <div className="mt-6 space-y-4">
+              {multiSelectionCount > 1 && hasMultiStepSummaryColumns && (
+                <div className="rounded-xl border border-[#e6eaef] bg-[#f8fafc] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm text-gray-600">
+                      Darstellung aktuell in den Farben von{' '}
+                      <span className="font-semibold text-[#1c2228]">
+                        {getSummaryPreviewLabel(activeSummaryPreviewIndex)}
+                      </span>
+                    </p>
+                    <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+                      {Array.from({ length: multiSelectionCount }, (_, index) => {
+                        const isActive = index === activeSummaryPreviewIndex
+                        return (
+                          <button
+                            key={`summary-preview-switch-${index}`}
+                            type="button"
+                            onClick={() => setSummaryPreviewIndex(index)}
+                            className={`px-3 py-1.5 rounded-md text-sm transition ${
+                              isActive
+                                ? 'bg-[#1c2228] text-white'
+                                : 'text-[#1c2228] hover:bg-gray-100'
+                            }`}
+                          >
+                            {getSummaryPreviewLabel(index)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {config.flow.includes('hobbys') && (
+                <div className="rounded-2xl border border-[#e6eaef] bg-[#fcfdff] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <strong className="text-[#1c2228]">Hobbys</strong>
+                    <span className="text-xs text-gray-500">{storeHobbys?.length || 0} ausgewählt</span>
+                  </div>
+                  {storeHobbys?.length ? (
+                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {storeHobbys.map((hobby) => {
+                        const hobbyThumbnailUrl = getHobbyThumbnailUrl(hobby)
+                        return (
+                          <div
+                            key={hobby}
+                            className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition hover:shadow-md"
+                          >
+                            <div
+                              className="w-full aspect-square flex items-center justify-center rounded-md overflow-hidden px-4"
+                              style={{ background: summaryMotifBackground }}
+                            >
+                              {hobbyThumbnailUrl ? (
+                                <span
+                                  className="block w-20 h-20"
+                                  style={{
+                                    background: summaryPrintFill,
+                                    WebkitMaskImage: `url(${hobbyThumbnailUrl})`,
+                                    WebkitMaskRepeat: 'no-repeat',
+                                    WebkitMaskPosition: 'center',
+                                    WebkitMaskSize: 'contain',
+                                    maskImage: `url(${hobbyThumbnailUrl})`,
+                                    maskRepeat: 'no-repeat',
+                                    maskPosition: 'center',
+                                    maskSize: 'contain',
+                                  }}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <span className="text-xs text-center" style={{ color: summaryMotifTextColor }}>
+                                  {hobby}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-center text-sm text-[#1c2228] mt-2 font-medium">{hobby}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-500">Keine Hobbys ausgewählt.</p>
+                  )}
+                </div>
+              )}
+
+              {config.flow.includes('landschaft') && (
+                <div className="rounded-2xl border border-[#e6eaef] bg-[#fcfdff] p-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <strong className="text-[#1c2228]">Landschaft</strong>
+                    <span className="text-sm text-gray-600">{landschaftValue || '–'}</span>
+                  </div>
+                  {landschaftPreviewUrl ? (
+                    <div className="mt-1 max-w-md">
+                      <div
+                        className="relative w-full aspect-[16/6] rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+                        style={{ background: summaryMotifBackground }}
+                      >
+                        <span
+                          className="absolute inset-0"
+                          style={{
+                            background: summaryPrintFill,
+                            WebkitMaskImage: `url(${landschaftPreviewUrl})`,
+                            WebkitMaskMode: 'luminance',
+                            WebkitMaskRepeat: 'no-repeat',
+                            WebkitMaskPosition: 'center',
+                            WebkitMaskSize: 'contain',
+                            maskImage: `url(${landschaftPreviewUrl})`,
+                            maskMode: 'luminance',
+                            maskRepeat: 'no-repeat',
+                            maskPosition: 'center',
+                            maskSize: 'contain',
+                          }}
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Keine Landschaft ausgewählt.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {config.flow.includes('text') && (
+            <div className="mt-4 rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
+              <p className="text-sm font-medium text-gray-700">Text unter dem Motiv</p>
+              <p className="mt-1 text-base font-semibold text-[#1c2228]">{textValue || '–'}</p>
+            </div>
+          )}
 
           <button
             onClick={handleAddToShopifyCart}
-            className="w-full mt-6 bg-black text-white py-3 rounded-xl hover:bg-gray-900"
+            className="w-full mt-6 bg-[#1c2228] text-white py-3 rounded-xl hover:opacity-90 transition shadow-md shadow-[#1c2228]/20"
           >
             Zum Warenkorb hinzufügen
           </button>

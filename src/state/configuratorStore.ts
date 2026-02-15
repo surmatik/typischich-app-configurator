@@ -27,6 +27,9 @@ interface ConfiguratorState {
 
   customName: string
   setCustomName: (name: string) => void
+
+  stepSelections: Record<string, string[]>
+  setStepSelections: (step: string, selections: string[]) => void
 }
 
 export const useConfiguratorStore = create<ConfiguratorState>((set) => ({
@@ -53,4 +56,13 @@ export const useConfiguratorStore = create<ConfiguratorState>((set) => ({
   
   customName: '',
   setCustomName: (name) => set({ customName: name }),
+
+  stepSelections: {},
+  setStepSelections: (step, selections) =>
+    set((state) => ({
+      stepSelections: {
+        ...state.stepSelections,
+        [step]: selections,
+      },
+    })),
 }))
