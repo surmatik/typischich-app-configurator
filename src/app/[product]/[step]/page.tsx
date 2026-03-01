@@ -15,6 +15,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 const CONFIG_DRAFT_STORAGE_PREFIX = 'typischich-configurator-draft:'
 const BEANIE_LEATHER_BACKGROUND_URL =
   'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Leder_neu_a1f61cdd53.JPG'
+const FILZ_BACKGROUND_URL =
+  'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Filz_verbessert_8dd6492265.JPG'
 
 const getDraftStorageKey = (productSlug: string) =>
   `${CONFIG_DRAFT_STORAGE_PREFIX}${productSlug}`
@@ -661,6 +663,12 @@ export default function ConfiguratorStepPage() {
   const summaryHobbyBackgroundStyle = product.includes('beanie')
     ? {
         backgroundImage: `url(${BEANIE_LEATHER_BACKGROUND_URL})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : product.includes('filz-bag') || product.includes('schluesselanhaenger')
+    ? {
+        backgroundImage: `url(${FILZ_BACKGROUND_URL})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
