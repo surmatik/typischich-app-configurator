@@ -17,6 +17,10 @@ const BEANIE_LEATHER_BACKGROUND_URL =
   'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Leder_neu_a1f61cdd53.JPG'
 const FILZ_BACKGROUND_URL =
   'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Filz_verbessert_8dd6492265.JPG'
+const FILZ_BAG_LIGHT_BACKGROUND_URL =
+  'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Heller_Filzbag_neu_6c2e27aed6.JPG'
+const FILZ_BAG_DARK_BACKGROUND_URL =
+  'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Dunkler_Filzbag_neu_7d76757452.JPG'
 
 const getDraftStorageKey = (productSlug: string) =>
   `${CONFIG_DRAFT_STORAGE_PREFIX}${productSlug}`
@@ -660,13 +664,27 @@ export default function ConfiguratorStepPage() {
   const summaryPrintFill = getSummaryPrintFill()
   const summaryMotifBackground = getSummaryMotifBackground()
   const summaryMotifTextColor = getSummaryMotifTextColor()
+  const summarySelectedColor = isMultiStepSelection('color')
+    ? colorSelections[activeSummaryPreviewIndex] || ''
+    : storeColor || ''
+  const filzBagBackgroundUrl = normalizeValue(summarySelectedColor).includes('hellgrau')
+    ? FILZ_BAG_LIGHT_BACKGROUND_URL
+    : normalizeValue(summarySelectedColor).includes('dunkelgrau')
+    ? FILZ_BAG_DARK_BACKGROUND_URL
+    : FILZ_BACKGROUND_URL
   const summaryHobbyBackgroundStyle = product.includes('beanie')
     ? {
         backgroundImage: `url(${BEANIE_LEATHER_BACKGROUND_URL})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
-    : product.includes('filz-bag') || product.includes('schluesselanhaenger')
+    : product.includes('filz-bag')
+    ? {
+        backgroundImage: `url(${filzBagBackgroundUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : product.includes('schluesselanhaenger')
     ? {
         backgroundImage: `url(${FILZ_BACKGROUND_URL})`,
         backgroundSize: 'cover',
