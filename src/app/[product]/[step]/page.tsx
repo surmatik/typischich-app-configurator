@@ -662,6 +662,7 @@ export default function ConfiguratorStepPage() {
   }
 
   const summaryPrintFill = getSummaryPrintFill()
+  const summaryHobbyPrintFill = product.includes('beanie') ? '#111111' : summaryPrintFill
   const summaryMotifBackground = getSummaryMotifBackground()
   const summaryMotifTextColor = getSummaryMotifTextColor()
   const summarySelectedColor = isMultiStepSelection('color')
@@ -1681,14 +1682,14 @@ export default function ConfiguratorStepPage() {
                             className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition hover:shadow-md"
                           >
                             <div
-                              className="w-full aspect-square flex items-center justify-center rounded-md overflow-hidden px-4"
+                              className="w-full aspect-square flex items-center justify-center rounded-md overflow-hidden px-2"
                               style={summaryHobbyBackgroundStyle}
                             >
                               {hobbyThumbnailUrl ? (
                                 <span
-                                  className="block w-20 h-20"
+                                  className="block w-28 h-28"
                                   style={{
-                                    background: summaryPrintFill,
+                                    background: summaryHobbyPrintFill,
                                     WebkitMaskImage: `url(${hobbyThumbnailUrl})`,
                                     WebkitMaskRepeat: 'no-repeat',
                                     WebkitMaskPosition: 'center',
