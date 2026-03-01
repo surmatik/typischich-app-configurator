@@ -1462,7 +1462,7 @@ export default function ConfiguratorStepPage() {
             </p>
           </div>
           <span className="rounded-full border border-[#d9e0e7] bg-[#eef3f8] px-3 py-1 text-xs font-semibold text-[#1c2228]">
-            Fast fertig
+            ✅ Fast fertig
           </span>
         </div>
 
