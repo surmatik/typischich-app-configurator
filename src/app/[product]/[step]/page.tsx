@@ -663,6 +663,7 @@ export default function ConfiguratorStepPage() {
 
   const summaryPrintFill = getSummaryPrintFill()
   const summaryHobbyPrintFill = product.includes('beanie') ? '#111111' : summaryPrintFill
+  const isSingleHobbyProduct = (config.maxHobbys ?? 3) === 1
   const summaryMotifBackground = getSummaryMotifBackground()
   const summaryMotifTextColor = getSummaryMotifTextColor()
   const summarySelectedColor = isMultiStepSelection('color')
@@ -1669,8 +1670,10 @@ export default function ConfiguratorStepPage() {
               {config.flow.includes('hobbys') && (
                 <div className="rounded-2xl border border-[#e6eaef] bg-[#fcfdff] p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="text-[#1c2228]">Hobbys</strong>
-                    <span className="text-xs text-gray-500">{storeHobbys?.length || 0} ausgewählt</span>
+                    <strong className="text-[#1c2228]">{isSingleHobbyProduct ? 'Hobby' : 'Hobbys'}</strong>
+                    {!isSingleHobbyProduct && (
+                      <span className="text-xs text-gray-500">{storeHobbys?.length || 0} ausgewählt</span>
+                    )}
                   </div>
                   {storeHobbys?.length ? (
                     <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1713,7 +1716,9 @@ export default function ConfiguratorStepPage() {
                       })}
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-gray-500">Keine Hobbys ausgewählt.</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {isSingleHobbyProduct ? 'Kein Hobby ausgewählt.' : 'Keine Hobbys ausgewählt.'}
+                    </p>
                   )}
                 </div>
               )}
