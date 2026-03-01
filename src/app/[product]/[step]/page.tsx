@@ -2,11 +2,40 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { getNextStep, getProductConfigBySlug } from '@/lib/getProductConfig'
-import { type Gender, useConfiguratorStore } from '@/state/configuratorStore'
+import {
+  type ConfiguratorDraft,
+  type Gender,
+  useConfiguratorStore,
+} from '@/state/configuratorStore'
 import StepWrapper from '@/components/StepWrapper'
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
+
+const CONFIG_DRAFT_STORAGE_PREFIX = 'typischich-configurator-draft:'
+const BEANIE_LEATHER_BACKGROUND_URL =
+  'https://strapi.prod-strapi-fra-01.surmatik.ch/uploads/Leder_neu_a1f61cdd53.JPG'
+
+const getDraftStorageKey = (productSlug: string) =>
+  `${CONFIG_DRAFT_STORAGE_PREFIX}${productSlug}`
+
+const hasDraftSelections = (draft: ConfiguratorDraft) => {
+  const hasStepSelections = Object.values(draft.stepSelections).some((selections) =>
+    selections.some((value) => Boolean(value?.trim()))
+  )
+
+  return Boolean(
+    draft.gender ||
+      draft.size ||
+      draft.color ||
+      draft.druckfarbe ||
+      draft.nameType ||
+      draft.customName.trim() ||
+      draft.hobbys.length ||
+      draft.landschaft.length ||
+      hasStepSelections
+  )
+}
 
 export default function ConfiguratorStepPage() {
   const { product, step } = useParams() as { product: string; step: string }
@@ -42,6 +71,8 @@ export default function ConfiguratorStepPage() {
   const storeCustomName = useConfiguratorStore((s) => s.customName)
   const stepSelections = useConfiguratorStore((s) => s.stepSelections)
   const setStepSelections = useConfiguratorStore((s) => s.setStepSelections)
+  const hydrateConfigurator = useConfiguratorStore((s) => s.hydrateConfigurator)
+  const resetConfigurator = useConfiguratorStore((s) => s.resetConfigurator)
 
   const multiStepSelectionConfig = config.multiStepSelection
   const multiSelectionCount = multiStepSelectionConfig?.count ?? 1
@@ -81,6 +112,7 @@ export default function ConfiguratorStepPage() {
   const [hoodieFarben, setHoodieFarben] = useState<{ name: string; url: string }[]>([])
   const [hoodieKidsFarben, setHoodieKidsFarben] = useState<{ name: string; url: string }[]>([])
   const [pulloverFarben, setPulloverFarben] = useState<{ name: string; url: string }[]>([])
+  const [beanieFarben, setBeanieFarben] = useState<{ name: string; url: string }[]>([])
 
   const [showInfo, setShowInfo] = useState(false)
   const [druckfarben, setDruckfarben] = useState<{ name: string; code: string }[]>([])
@@ -90,8 +122,21 @@ export default function ConfiguratorStepPage() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [summaryPreviewIndex, setSummaryPreviewIndex] = useState(0)
+  const [hydratedDraftProduct, setHydratedDraftProduct] = useState<string | null>(null)
 
   const prevHobbysRef = useRef<string[]>([])
+  const storeSyncLockRef = useRef(true)
+
+  const clearLocalSelections = () => {
+    setSelectedSize('')
+    setSelectedColor('')
+    setSelectedDruckfarbe('')
+    setSelectedHobbys([])
+    setSelectedLandschaft('')
+    setSelectedNameType('')
+    setEnteredName('')
+    prevHobbysRef.current = []
+  }
 
 
   useEffect(() => {
@@ -114,8 +159,36 @@ export default function ConfiguratorStepPage() {
     setSummaryPreviewIndex(0)
   }, [product])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    storeSyncLockRef.current = true
+    clearLocalSelections()
+    setHydratedDraftProduct(null)
+    const storageKey = getDraftStorageKey(product)
+    const rawDraft = window.localStorage.getItem(storageKey)
+
+    if (!rawDraft) {
+      resetConfigurator()
+      setHydratedDraftProduct(product)
+      return
+    }
+
+    try {
+      const parsedDraft = JSON.parse(rawDraft) as Partial<ConfiguratorDraft>
+      hydrateConfigurator(parsedDraft)
+    } catch (error) {
+      console.error('Konfiguration konnte nicht geladen werden:', error)
+      window.localStorage.removeItem(storageKey)
+      resetConfigurator()
+    } finally {
+      setHydratedDraftProduct(product)
+    }
+  }, [product, hydrateConfigurator, resetConfigurator])
+
   // Size
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedSize && selectedSize !== storeSize) {
       setSize(selectedSize)
     }
@@ -123,6 +196,7 @@ export default function ConfiguratorStepPage() {
 
   // Color
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedColor && selectedColor !== storeColor) {
       setColor(selectedColor)
     }
@@ -130,6 +204,7 @@ export default function ConfiguratorStepPage() {
 
   // Druckfarbe
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedDruckfarbe && selectedDruckfarbe !== storeDruckfarbe) {
       setDruckfarbe(selectedDruckfarbe)
     }
@@ -137,6 +212,7 @@ export default function ConfiguratorStepPage() {
 
   // Hobbys
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     const current = JSON.stringify(selectedHobbys)
     const prev = JSON.stringify(prevHobbysRef.current)
     if (current !== prev) {
@@ -147,6 +223,7 @@ export default function ConfiguratorStepPage() {
 
   // Landschaft
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedLandschaft && selectedLandschaft !== storeLandschaft[0]) {
       setLandschaft([selectedLandschaft])
     }
@@ -154,6 +231,7 @@ export default function ConfiguratorStepPage() {
 
   // Textauswahl (Name, Typisch Ich, Nichts)
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedNameType && selectedNameType !== storeNameType) {
       setNameType(selectedNameType)
     }
@@ -161,6 +239,7 @@ export default function ConfiguratorStepPage() {
 
   // Eingetippter Name
   useEffect(() => {
+    if (storeSyncLockRef.current) return
     if (selectedNameType === 'Name' && enteredName !== storeCustomName) {
       setCustomName(enteredName)
     }
@@ -175,7 +254,45 @@ export default function ConfiguratorStepPage() {
     setSelectedLandschaft(storeLandschaft[0] || '')
     setSelectedNameType(storeNameType || '')
     setEnteredName(storeCustomName || '')
+    storeSyncLockRef.current = false
   }, [storeSize, storeColor, storeDruckfarbe, storeHobbys, storeLandschaft, storeNameType, storeCustomName])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (hydratedDraftProduct !== product) return
+
+    const storageKey = getDraftStorageKey(product)
+    const draft: ConfiguratorDraft = {
+      gender,
+      size: storeSize,
+      color: storeColor,
+      druckfarbe: storeDruckfarbe,
+      hobbys: storeHobbys || [],
+      landschaft: storeLandschaft || [],
+      nameType: storeNameType,
+      customName: storeCustomName || '',
+      stepSelections,
+    }
+
+    if (hasDraftSelections(draft)) {
+      window.localStorage.setItem(storageKey, JSON.stringify(draft))
+      return
+    }
+
+    window.localStorage.removeItem(storageKey)
+  }, [
+    hydratedDraftProduct,
+    product,
+    gender,
+    storeSize,
+    storeColor,
+    storeDruckfarbe,
+    storeHobbys,
+    storeLandschaft,
+    storeNameType,
+    storeCustomName,
+    stepSelections,
+  ])
 
   useEffect(() => {
     if (step === 'druckfarbe' || step === 'summary') {
@@ -241,12 +358,58 @@ export default function ConfiguratorStepPage() {
           url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
         }));
         setPulloverFarben(farben);
+      } else if (product.includes('beanie')) {
+        const beanieApiCandidates = [
+          'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-beanie-farbens?populate=*',
+          'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typisch-ich-beanie-farben?populate=*',
+          'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-beanie-farbens?populate=*',
+          'https://strapi.prod-strapi-fra-01.surmatik.ch/api/typischich-beanie-farben?populate=*',
+        ]
+
+        let loadedFarben: { name: string; url: string }[] | null = null
+
+        for (const endpoint of beanieApiCandidates) {
+          try {
+            const res = await fetch(endpoint)
+            if (!res.ok) continue
+
+            const data = await res.json()
+            if (!data || !Array.isArray(data.data)) continue
+
+            const farben = data.data
+              .map((item: any) => ({
+                name: item.Farbe || item.farbe || item.Name || item.name || '',
+                url:
+                  item.Bild?.formats?.thumbnail?.url ||
+                  item.Bild?.url ||
+                  item.bild?.formats?.thumbnail?.url ||
+                  item.bild?.url ||
+                  '',
+              }))
+              .filter((farbe: { name: string }) => Boolean(farbe.name))
+
+            if (farben.length > 0) {
+              loadedFarben = farben
+              break
+            }
+          } catch {
+            // Try next endpoint candidate.
+          }
+        }
+
+        if (!loadedFarben) {
+          console.error('Fehler beim Laden der Farben (Beanie): kein gueltiger Endpoint oder keine Public-Rechte.')
+          setBeanieFarben([])
+          return
+        }
+
+        setBeanieFarben(loadedFarben)
       }
     };
 
   
     fetchColors()
-  }, [step])
+  }, [step, product])
 
   useEffect(() => {
     if (step !== 'hobbys' && step !== 'summary') return
@@ -323,11 +486,18 @@ export default function ConfiguratorStepPage() {
   const landschaftPreviewUrl = landschaftValue ? getLandschaftPreviewUrl(landschaftValue) : null
   const textValue = storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || '')
 
-  const hoodieOrPulloverColors = product.includes('hoodie-fuer-kids')
+  const colorOptionsWithImages = product.includes('hoodie-fuer-kids')
     ? hoodieKidsFarben
+    : product.includes('hoodie')
+    ? hoodieFarben
     : product.includes('pullover')
     ? pulloverFarben
-    : hoodieFarben
+    : product.includes('beanie')
+    ? beanieFarben
+    : []
+  const hasImageColorChoices =
+    (product.includes('hoodie') || product.includes('pullover') || product.includes('beanie')) &&
+    colorOptionsWithImages.length > 0
 
   const goToNextStep = () => {
     if (!next) return
@@ -418,7 +588,7 @@ export default function ConfiguratorStepPage() {
   }
 
   const getColorPreviewImageUrl = (colorName: string) => {
-    const match = hoodieOrPulloverColors.find(
+    const match = colorOptionsWithImages.find(
       (farbe) => normalizeValue(farbe.name) === normalizeValue(colorName)
     )
     if (!match?.url) return null
@@ -488,6 +658,13 @@ export default function ConfiguratorStepPage() {
   const summaryPrintFill = getSummaryPrintFill()
   const summaryMotifBackground = getSummaryMotifBackground()
   const summaryMotifTextColor = getSummaryMotifTextColor()
+  const summaryHobbyBackgroundStyle = product.includes('beanie')
+    ? {
+        backgroundImage: `url(${BEANIE_LEATHER_BACKGROUND_URL})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : { background: summaryMotifBackground }
 
   const addSingleOrMultiProperty = (
     properties: Record<string, string>,
@@ -525,7 +702,17 @@ export default function ConfiguratorStepPage() {
     Object.entries(properties).forEach(([key, value]) => {
       params.set(`properties[${key}]`, value)
     })
-  
+
+    if (typeof window !== 'undefined') {
+      Object.keys(window.localStorage)
+        .filter((key) => key.startsWith(CONFIG_DRAFT_STORAGE_PREFIX))
+        .forEach((key) => window.localStorage.removeItem(key))
+    }
+
+    storeSyncLockRef.current = true
+    clearLocalSelections()
+    resetConfigurator()
+
     const url = `https://typischich.ch/cart/add?${params.toString()}`
     window.location.href = url // ⬅️ direkt weiterleiten wie gewünscht
   }
@@ -820,14 +1007,14 @@ export default function ConfiguratorStepPage() {
               : 'Farbe wählen'}
           </h1>
 
-          {product.includes('hoodie') || product.includes('pullover') ? (
+          {hasImageColorChoices ? (
             isMultiStepSelection('color') ? (
               <div className="space-y-6 mb-6">
                 {colorSelections.map((selectedValue, index) => (
                   <div key={index}>
                     <p className="text-sm font-semibold text-[#262626] mb-3">{getSelectionLabel(index)}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {hoodieOrPulloverColors.map((farbe) => {
+                      {colorOptionsWithImages.map((farbe) => {
                         const selected = selectedValue === farbe.name
                         return (
                           <div
@@ -858,7 +1045,7 @@ export default function ConfiguratorStepPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-                {hoodieOrPulloverColors.map((farbe) => {
+                {colorOptionsWithImages.map((farbe) => {
                   const selected = selectedColor === farbe.name
                   return (
                     <div
@@ -1297,16 +1484,16 @@ export default function ConfiguratorStepPage() {
                         {config.flow.includes('color') && (
                           <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
                             <span className="text-sm text-gray-500">Farbe</span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                               {colorValue ? (
                                 <>
                                   {colorImageUrl ? (
                                     <Image
                                       src={colorImageUrl}
                                       alt={colorValue}
-                                      width={28}
-                                      height={28}
-                                      className="w-7 h-7 rounded-md object-contain border border-gray-200 bg-white"
+                                      width={52}
+                                      height={52}
+                                      className="w-[52px] h-[52px] rounded-md object-contain border border-gray-200 bg-white"
                                     />
                                   ) : flatColorCode ? (
                                     <span
@@ -1367,16 +1554,16 @@ export default function ConfiguratorStepPage() {
                 {config.flow.includes('color') && (
                   <div className="rounded-xl border border-[#e6eaef] bg-gradient-to-b from-white to-[#f9fafb] px-3 py-3">
                     <p className="text-sm font-medium text-gray-500">Farbe</p>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex items-center gap-3">
                       {storeColor ? (
                         <>
                           {getColorPreviewImageUrl(storeColor) ? (
                             <Image
                               src={getColorPreviewImageUrl(storeColor) as string}
                               alt={storeColor}
-                              width={30}
-                              height={30}
-                              className="w-8 h-8 rounded-md object-contain border border-gray-200 bg-white"
+                              width={52}
+                              height={52}
+                              className="w-[52px] h-[52px] rounded-md object-contain border border-gray-200 bg-white"
                             />
                           ) : getFlatColorCode(storeColor) ? (
                             <span
@@ -1469,7 +1656,7 @@ export default function ConfiguratorStepPage() {
                           >
                             <div
                               className="w-full aspect-square flex items-center justify-center rounded-md overflow-hidden px-4"
-                              style={{ background: summaryMotifBackground }}
+                              style={summaryHobbyBackgroundStyle}
                             >
                               {hobbyThumbnailUrl ? (
                                 <span

@@ -3,6 +3,18 @@ import { create } from 'zustand'
 export type Gender = 'Frau' | 'Mann' | 'Kind'
 export type Size = string
 
+export interface ConfiguratorDraft {
+  gender: Gender | null
+  size: Size | null
+  color: string | null
+  druckfarbe: string | null
+  hobbys: string[]
+  landschaft: string[]
+  nameType: string | null
+  customName: string
+  stepSelections: Record<string, string[]>
+}
+
 interface ConfiguratorState {
   gender: Gender | null
   setGender: (gender: Gender) => void
@@ -30,6 +42,37 @@ interface ConfiguratorState {
 
   stepSelections: Record<string, string[]>
   setStepSelections: (step: string, selections: string[]) => void
+
+  hydrateConfigurator: (draft: Partial<ConfiguratorDraft>) => void
+  resetConfigurator: () => void
+}
+
+const createInitialState = (): ConfiguratorDraft => ({
+  gender: null,
+  size: null,
+  color: null,
+  druckfarbe: null,
+  hobbys: [],
+  landschaft: [],
+  nameType: null,
+  customName: '',
+  stepSelections: {},
+})
+
+const isGender = (value: unknown): value is Gender =>
+  value === 'Frau' || value === 'Mann' || value === 'Kind'
+
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+
+const toStepSelections = (value: unknown): Record<string, string[]> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+
+  const entries = Object.entries(value as Record<string, unknown>)
+  return entries.reduce<Record<string, string[]>>((acc, [step, selections]) => {
+    acc[step] = toStringArray(selections)
+    return acc
+  }, {})
 }
 
 export const useConfiguratorStore = create<ConfiguratorState>((set) => ({
@@ -65,4 +108,19 @@ export const useConfiguratorStore = create<ConfiguratorState>((set) => ({
         [step]: selections,
       },
     })),
+
+  hydrateConfigurator: (draft) =>
+    set({
+      gender: isGender(draft.gender) ? draft.gender : null,
+      size: typeof draft.size === 'string' ? draft.size : null,
+      color: typeof draft.color === 'string' ? draft.color : null,
+      druckfarbe: typeof draft.druckfarbe === 'string' ? draft.druckfarbe : null,
+      hobbys: toStringArray(draft.hobbys),
+      landschaft: toStringArray(draft.landschaft),
+      nameType: typeof draft.nameType === 'string' ? draft.nameType : null,
+      customName: typeof draft.customName === 'string' ? draft.customName : '',
+      stepSelections: toStepSelections(draft.stepSelections),
+    }),
+
+  resetConfigurator: () => set(createInitialState()),
 }))
