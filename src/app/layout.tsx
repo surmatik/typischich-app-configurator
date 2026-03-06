@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Konfigurator - Typisch Ich",
   description: "",
+  icons: {
+    icon: "https://typischich.ch/cdn/shop/files/logo_black.png?v=1740907843&width=140",
+    shortcut: "https://typischich.ch/cdn/shop/files/logo_black.png?v=1740907843&width=140",
+    apple: "https://typischich.ch/cdn/shop/files/logo_black.png?v=1740907843&width=140",
+  },
 };
 
 export default function RootLayout({

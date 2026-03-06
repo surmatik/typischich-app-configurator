@@ -7,6 +7,11 @@ export interface ProductConfig {
   sizes?: string[]
   colors?: string[]
   maxHobbys?: number
+  multiStepSelection?: {
+    count: number
+    steps: string[]
+    labels?: string[]
+  }
 }
 export const productConfigs: ProductConfig[] = [
     {
@@ -27,6 +32,30 @@ export const productConfigs: ProductConfig[] = [
       ],
       colors: ['schwarz', 'grau', 'weiss'],
       maxHobbys: 3
+    },
+    {
+      id: '53861804147017',
+      title: 'Unsere persönlichen T-Shirts',
+      slug: 'unsere-persoenlichen-t-shirts',
+      flow: ['gender', 'size', 'color', 'druckfarbe', 'hobbys', 'landschaft', 'text', 'summary'],
+      genderOptions: ['Frau', 'Mann'],
+      sizes: [
+        'Wähle eine Grösse aus',
+        'XS (nur für Frauengrösse)',
+        'S',
+        'M',
+        'L',
+        'XL',
+        'XXL',
+        '3XL (nur für Herrengrösse)',
+      ],
+      colors: ['schwarz', 'grau', 'weiss'],
+      maxHobbys: 3,
+      multiStepSelection: {
+        count: 2,
+        steps: ['gender', 'size', 'color', 'druckfarbe'],
+        labels: ['T-Shirts 1', 'T-Shirts 2'],
+      }
     },
     {
       id: '52572910190921',
