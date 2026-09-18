@@ -3,6 +3,12 @@
 import { useParams, useRouter } from 'next/navigation'
 import { getNextStep, getProductConfigBySlug } from '@/lib/getProductConfig'
 import {
+  postToShopifyCart,
+  resolveStrapiMediaUrl,
+  sanitizeCartProperty,
+  validateCartSelections,
+} from '@/lib/security'
+import {
   type ConfiguratorDraft,
   type Gender,
   useConfiguratorStore,
@@ -337,7 +343,10 @@ export default function ConfiguratorStepPage() {
         }
         const farben = data.data.map((item: any) => ({
           name: item.Farbe,
-          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+          url:
+            resolveStrapiMediaUrl(
+              item.Bild?.formats?.thumbnail?.url || item.Bild?.url || ''
+            ) || '',
         }));
         setHoodieKidsFarben(farben);
       } else if (product.includes('hoodie')) {
@@ -349,7 +358,10 @@ export default function ConfiguratorStepPage() {
         }
         const farben = data.data.map((item: any) => ({
           name: item.Farbe,
-          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+          url:
+            resolveStrapiMediaUrl(
+              item.Bild?.formats?.thumbnail?.url || item.Bild?.url || ''
+            ) || '',
         }));
         setHoodieFarben(farben);
       } else if (product.includes('pullover')) {
@@ -361,7 +373,10 @@ export default function ConfiguratorStepPage() {
         }
         const farben = data.data.map((item: any) => ({
           name: item.Farbe,
-          url: item.Bild?.formats?.thumbnail?.url || item.Bild?.url || '',
+          url:
+            resolveStrapiMediaUrl(
+              item.Bild?.formats?.thumbnail?.url || item.Bild?.url || ''
+            ) || '',
         }));
         setPulloverFarben(farben);
       } else if (product.includes('beanie')) {
@@ -386,11 +401,13 @@ export default function ConfiguratorStepPage() {
               .map((item: any) => ({
                 name: item.Farbe || item.farbe || item.Name || item.name || '',
                 url:
-                  item.Bild?.formats?.thumbnail?.url ||
-                  item.Bild?.url ||
-                  item.bild?.formats?.thumbnail?.url ||
-                  item.bild?.url ||
-                  '',
+                  resolveStrapiMediaUrl(
+                    item.Bild?.formats?.thumbnail?.url ||
+                      item.Bild?.url ||
+                      item.bild?.formats?.thumbnail?.url ||
+                      item.bild?.url ||
+                      ''
+                  ) || '',
               }))
               .filter((farbe: { name: string }) => Boolean(farbe.name))
 
@@ -432,7 +449,10 @@ export default function ConfiguratorStepPage() {
         const data = await res.json()
         const currentPageHobbys = data.data.map((item: any) => ({
           name: item.Hobby,
-          thumbnail: item.Motive?.formats?.thumbnail?.url || item.Motive?.url,
+          thumbnail:
+            resolveStrapiMediaUrl(
+              item.Motive?.formats?.thumbnail?.url || item.Motive?.url
+            ) || '',
         }))
   
         allHobbys = [...allHobbys, ...currentPageHobbys]
@@ -462,7 +482,10 @@ export default function ConfiguratorStepPage() {
           const lands = data.data.map((item: any) => ({
             id: item.id,
             name: item.Name,
-            url: item.Landschaft?.formats?.large?.url || item.Landschaft?.url || '',
+            url:
+              resolveStrapiMediaUrl(
+                item.Landschaft?.formats?.large?.url || item.Landschaft?.url || ''
+              ) || '',
           }))
           setLandschaften(lands)
         })
@@ -598,7 +621,7 @@ export default function ConfiguratorStepPage() {
       (farbe) => normalizeValue(farbe.name) === normalizeValue(colorName)
     )
     if (!match?.url) return null
-    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.url}`
+    return resolveStrapiMediaUrl(match.url)
   }
 
   const getDruckfarbeCode = (farbeName: string) => {
@@ -613,7 +636,7 @@ export default function ConfiguratorStepPage() {
       (hobby) => normalizeValue(hobby.name) === normalizeValue(hobbyName)
     )
     if (!match?.thumbnail) return null
-    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.thumbnail}`
+    return resolveStrapiMediaUrl(match.thumbnail)
   }
 
   function getLandschaftPreviewUrl(landschaftName: string) {
@@ -621,7 +644,7 @@ export default function ConfiguratorStepPage() {
       (landschaftItem) => normalizeValue(landschaftItem.name) === normalizeValue(landschaftName)
     )
     if (!match?.url) return null
-    return `https://strapi.prod-strapi-fra-01.surmatik.ch${match.url}`
+    return resolveStrapiMediaUrl(match.url)
   }
 
   const getSummaryPrintFill = () => {
@@ -714,22 +737,37 @@ export default function ConfiguratorStepPage() {
   }
 
   const handleAddToShopifyCart = () => {
-    const params = new URLSearchParams()
-    params.set('id', config.id) // z. B. 51964063285577
-  
+    const validation = validateCartSelections({
+      gender,
+      size: storeSize,
+      color: storeColor,
+      genderOptions: config.genderOptions,
+      sizes: config.sizes,
+      colors: config.colors,
+      customName: storeCustomName,
+      multiValues: {
+        gender: getStepSelections('gender'),
+        size: getStepSelections('size'),
+        color: getStepSelections('color'),
+      },
+    })
+
+    if (!validation.ok) {
+      window.alert(validation.reason)
+      return
+    }
+
     const properties: Record<string, string> = {}
     addSingleOrMultiProperty(properties, 'gender', 'Geschlecht', gender || '')
     addSingleOrMultiProperty(properties, 'size', 'Grösse', storeSize || '')
     addSingleOrMultiProperty(properties, 'color', 'Farbe', storeColor || '')
     addSingleOrMultiProperty(properties, 'druckfarbe', 'Druckfarbe', storeDruckfarbe || '')
-    properties.Hobbys = storeHobbys?.join(', ') || ''
-    properties.Landschaft = storeLandschaft[0] || ''
-    properties.Text = storeNameType === 'Name' ? (storeCustomName || '') : (storeNameType || '')
+    properties.Hobbys = sanitizeCartProperty(storeHobbys?.join(', ') || '')
+    properties.Landschaft = sanitizeCartProperty(storeLandschaft[0] || '')
+    properties.Text = sanitizeCartProperty(
+      storeNameType === 'Name' ? storeCustomName || '' : storeNameType || ''
+    )
     properties._KonfigID = `${Date.now()}-${Math.floor(Math.random() * 100000)}`
-  
-    Object.entries(properties).forEach(([key, value]) => {
-      params.set(`properties[${key}]`, value)
-    })
 
     if (typeof window !== 'undefined') {
       Object.keys(window.localStorage)
@@ -741,8 +779,7 @@ export default function ConfiguratorStepPage() {
     clearLocalSelections()
     resetConfigurator()
 
-    const url = `https://typischich.ch/cart/add?${params.toString()}`
-    window.location.href = url // ⬅️ direkt weiterleiten wie gewünscht
+    postToShopifyCart(config.id, properties)
   }
   
   
@@ -1055,7 +1092,7 @@ export default function ConfiguratorStepPage() {
                             <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
                               {farbe.url && (
                                 <Image
-                                  src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
+                                  src={farbe.url}
                                   alt={farbe.name}
                                   width={80}
                                   height={80}
@@ -1086,7 +1123,7 @@ export default function ConfiguratorStepPage() {
                       <div className="w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2">
                         {farbe.url && (
                           <Image
-                            src={`https://strapi.prod-strapi-fra-01.surmatik.ch${farbe.url}`}
+                            src={farbe.url}
                             alt={farbe.name}
                             width={80}
                             height={80}
@@ -1288,7 +1325,7 @@ export default function ConfiguratorStepPage() {
                 <div className="bg-black w-full h-28 flex items-center justify-center rounded-md overflow-hidden mb-2 px-4">
                     {hobby.thumbnail && (
                     <Image
-                    src={`https://strapi.prod-strapi-fra-01.surmatik.ch${hobby.thumbnail}`}
+                    src={hobby.thumbnail}
                     alt={hobby.name}
                     width={80}
                     height={80}
@@ -1341,13 +1378,15 @@ export default function ConfiguratorStepPage() {
                 }`}
             >
                 <div className="p-2">
+                {l.url ? (
                 <Image
-                    src={`https://strapi.prod-strapi-fra-01.surmatik.ch${l.url}`}
+                    src={l.url}
                     alt={l.name}
                     width={1000}
                     height={200}
                     className="w-full h-auto rounded-lg object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                 />
+                ) : null}
                 </div>
                 <p className="text-center text-sm py-2 text-[#262626] font-medium">{l.name} (Beispiel)</p>
             </div>
